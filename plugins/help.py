@@ -36,6 +36,9 @@ def help_command(text, chan, conn, bot, notice, message, has_permission):
                 notice(message)
             else:
                 notice("Command {} has no additional documentation.".format(searching_for))
+            aliases = bot.plugin_manager.commands[searching_for].aliases
+            if len(aliases) > 1:
+                notice("Aliases: {}".format(", ".join(a for a in bot.plugin_manager.commands[searching_for].aliases)))
         else:
             notice("Unknown command '{}'".format(searching_for))
     else:
