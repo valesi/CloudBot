@@ -139,4 +139,4 @@ def listregex(conn):
         if conn_name != conn.name:
             continue
         values.append("{}: {}".format(chan, status))
-    return ", ".join(values)
+    return ", ".join(values) if values else "No overrides. Default: {}".format("enabled" if default_enabled else "disabled")
