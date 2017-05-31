@@ -135,7 +135,7 @@ def regexstatus(text, conn, chan):
 @hook.command(autohelp=False, permissions=["botcontrol"])
 def listregex(conn):
     values = []
-    for (conn_name, chan), status in status_cache.values():
+    for (conn_name, chan), status in status_cache.items():
         if conn_name != conn.name:
             continue
         values.append("{}: {}".format(chan, status))
