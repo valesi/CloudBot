@@ -78,13 +78,13 @@ def load_cache(async, db):
     global reminder_cache
     reminder_cache = []
 
-    for network, remind_time, added_time, user, message in (yield from async(_load_cache_db, db)):
-        reminder_cache.append((network, remind_time, added_time, user, message))
+    for network, user, added_time, added_chan, message, remind_time in (yield from async(_load_cache_db, db)):
+        reminder_cache.append((network, user, added_time, added_chan, message, remind_time))
 
 
 def _load_cache_db(db):
     query = db.execute(table.select())
-    return [(row["network"], row["remind_time"], row["added_time"], row["added_user"], row["message"]) for row in query]
+    return [(row["network"], row["added_user"], row["added_time"], row["added_chan"], row["message"], row["remind_time"]) for row in query]
 
 
 @asyncio.coroutine
@@ -93,11 +93,11 @@ def check_reminders(bot, async, db):
     current_time = datetime.now()
 
     for reminder in reminder_cache:
-        network, remind_time, added_time, user, message = reminder
+        network, user, added_time, added_chan, message, remind_time = reminder
         if remind_time <= current_time:
             if network not in bot.connections:
                 # connection is invalid
-                yield from add_reminder(async, db, network, remind_time, user)
+                yield from add_reminder(async, db, network, user, added_chan, message, remind_time, added_time)
                 yield from load_cache(async, db)
                 continue
 
