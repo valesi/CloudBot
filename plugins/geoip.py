@@ -81,7 +81,7 @@ def geoip(text, reply, loop):
         return "GeoIP database is still loading, please wait a minute"
 
     try:
-        ip = yield from loop.run_in_executor(None, socket.gethostbyname, text)
+        ip = (yield from loop.run_in_executor(None, socket.getaddrinfo, text, None))[0][-1][0]
     except socket.gaierror:
         return "Invalid input."
 
@@ -100,4 +100,4 @@ def geoip(text, reply, loop):
     if location_data.subdivisions.most_specific.name:
         data["city"] += ", " + location_data.subdivisions.most_specific.name
 
-    reply("\x02Country:\x02 {country} ({cc}), \x02City:\x02 {city}".format(**data))
+    reply("IP: {} | Country: {country} ({cc}) | City: {city}".format(ip, **data))
