@@ -47,11 +47,13 @@ def set_status(db, conn, chan, status):
         # otherwise, insert
         db.execute(table.insert().values(connection=conn, channel=chan, status=status))
     db.commit()
+    load_cache(db)
 
 
 def delete_status(db, conn, chan):
     db.execute(table.delete().where(table.c.connection == conn).where(table.c.channel == chan))
     db.commit()
+    load_cache(db)
 
 
 @hook.sieve()
@@ -76,10 +78,9 @@ def enableregex(text, db, conn, chan, nick, message, notice):
     else:
         channel = "#{}".format(text)
 
-    message("Enabling regex matching (youtube, etc) (issued by {})".format(nick), target=channel)
-    notice("Enabling regex matching (youtube, etc) in channel {}".format(channel))
+    message("Enabling regex matching", target=channel)
+    notice("Enabling regex matching in channel {}".format(channel))
     set_status(db, conn.name, channel, "ENABLED")
-    load_cache(db)
 
 
 @hook.command(autohelp=False, permissions=["botcontrol"])
@@ -92,10 +93,9 @@ def disableregex(text, db, conn, chan, nick, message, notice):
     else:
         channel = "#{}".format(text)
 
-    message("Disabling regex matching (youtube, etc) (issued by {})".format(nick), target=channel)
-    notice("Disabling regex matching (youtube, etc) in channel {}".format(channel))
+    message("Disabling regex matching", target=channel)
+    notice("Disabling regex matching in channel {}".format(channel))
     set_status(db, conn.name, channel, "DISABLED")
-    load_cache(db)
 
 
 @hook.command(autohelp=False, permissions=["botcontrol"])
@@ -108,10 +108,9 @@ def resetregex(text, db, conn, chan, nick, message, notice):
     else:
         channel = "#{}".format(text)
 
-    message("Resetting regex matching setting (youtube, etc) (issued by {})".format(nick), target=channel)
-    notice("Resetting regex matching setting (youtube, etc) in channel {}".format(channel))
+    message("Resetting regex matching setting", target=channel)
+    notice("Resetting regex matching setting in channel {}".format(channel))
     delete_status(db, conn.name, channel)
-    load_cache(db)
 
 
 @hook.command(autohelp=False, permissions=["botcontrol"])
@@ -124,11 +123,8 @@ def regexstatus(text, conn, chan):
     else:
         channel = "#{}".format(text)
     status = status_cache.get((conn.name, chan))
-    if status is None:
-        if default_enabled:
-            status = "ENABLED"
-        else:
-            status = "DISABLED"
+    if not status:
+        status = "ENABLED" if default_enabled else "DISABLED"
     return "Regex status for {}: {}".format(channel, status)
 
 
