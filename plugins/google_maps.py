@@ -36,8 +36,8 @@ def load_key(bot):
     dev_key = bot.config.get("api_keys", {}).get("google_dev_key", None)
 
 
-@hook.command("locate", "maps")
-def locate(text):
+@hook.command()
+def maps(text):
     """<location> -- Finds <location> on Google Maps."""
     if not dev_key:
         return "This command requires a Google Developers Console API key."
