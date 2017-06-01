@@ -114,6 +114,8 @@ def solicit(bot, conn, text, chan, nick, user):
 
 @hook.sieve()
 def sieve_regex(bot, event, _hook):
+    prefix = event.conn.config.get("command_prefix")
+
     if _hook.type == "regex" and event.chan.startswith("#"):
         if _hook.plugin.title not in plugin_whitelist:
             if event.force:
@@ -126,13 +128,16 @@ def sieve_regex(bot, event, _hook):
                 return
             bot.logger.info("[{}] Allowing {} to {}".format(event.conn.name, _hook.function_name, event.chan))
     elif _hook.type == "command" and _hook.function_name == "solicit":
+        # Don't allow recursive .get .get .get ...
+        if event.text.startswith(prefix + event.triggered_command):
+            return
         # TODO get last regex of user if text is user?
         ret, value = check_solicit_index(event.conn.name, event.chan, event.text)
+        # number: valid index
         if ret:
-            # number: valid index
             return get_event(event.conn.name, event.chan, value)
+        # number: invalid index
         elif ret is False:
-            # number: invalid index
             if value:
                 event.message(value)
             return
