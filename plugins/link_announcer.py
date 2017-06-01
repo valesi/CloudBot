@@ -11,13 +11,18 @@ url_re = re.compile('(?!{})http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+~]|[!*\(\),]|(?:
 opt_out = []
 
 traditional = [
-    (1024 ** 5, 'PB'),
-    (1024 ** 4, 'TB'), 
-    (1024 ** 3, 'GB'), 
-    (1024 ** 2, 'MB'), 
-    (1024 ** 1, 'KB'),
+    (1024 ** 5, 'PiB'),
+    (1024 ** 4, 'TiB'),
+    (1024 ** 3, 'GiB'),
+    (1024 ** 2, 'MiB'),
+    (1024 ** 1, 'KiB'),
     (1024 ** 0, 'B'),
-    ]
+]
+
+HEADERS = {
+    'Accept-Language': 'en-US,en;q=0.5',
+    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.116 Safari/537.36'
+}
 
 
 def bytesto(bytes, system = traditional):
@@ -29,29 +34,53 @@ def bytesto(bytes, system = traditional):
     amount = int(bytes/factor)
     return str(amount) + suffix
 
+
+@hook.command("t", autohelp=False)
+def title(text, chan, conn):
+    """[URL] - Gets the HTML title of [URL], or of the lastest URL in chat history"""
+    url = None
+    if text:
+        match = url_re.search(text)
+        if not match:
+            return
+        url = match.group()
+    else:
+        for line in conn.history[chan].__reversed__():
+            match = url_re.search(item[2])
+            if match:
+                url = match.group()
+                break
+    return get_title(url) if url else None
+
+
 @hook.regex(url_re)
-def print_url_title(message, match, chan):
+def title_re(match, chan, conn):
     if chan in opt_out:
         return
-    HEADERS = {
-        'Accept-Language': 'en-US,en;q=0.5',
-        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.116 Safari/537.36'
-    }
-    with closing(requests.get(match.group(), headers = HEADERS, stream = True, timeout=3)) as r:
-        if not r.encoding:
-            # remove the content type and size from output for now
+    url = match.group()
+    if re.search(blacklist, url):
+        return
+
+    return get_title(url)
+
+
+def get_title(url):
+    try:
+        with closing(requests.get(url, headers=HEADERS, stream=True, timeout=5)) as r:
+            if not r.encoding:
+                r.close()
+                content = r.headers['content-type']
+                size = bytesto(r.headers['content-length'])
+                return "Content Type: {} | Size: {}".format(content, size)
+            # Sites advertising ISO-8859-1 are often lying
+            if r.encoding == 'ISO-8859-1':
+                r.encoding = "utf-8"
+            content = r.raw.read(1000000+1, decode_content=True)
+            if len(content) > 1000000:
+                r.close()
+                return
+            html = BeautifulSoup(content)
             r.close()
-            return
-            #content = r.headers['content-type']
-            #size = bytesto(r.headers['content-length'])
-            #out = "Content Type: \x02{}\x02 Size: \x02{}\x02".format(content, size)
-            #return out
-        content = r.raw.read(1000000+1, decode_content=True)
-        if len(content) > 1000000:
-            r.close()
-            return
-        html = BeautifulSoup(content)
-        r.close()
-        title = " ".join(html.title.text.strip().splitlines())
-        out = "Title: \x02{}\x02".format(title)
-        message(out, chan)
+            return " ".join(html.title.text.strip().splitlines())
+    except ReadTimeout as ex:
+        return "Error: Connection timeout"
