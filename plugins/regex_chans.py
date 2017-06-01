@@ -1,7 +1,11 @@
+import asyncio
+from collections import deque
+
 from sqlalchemy import Table, Column, UniqueConstraint, String
 
-from cloudbot import hook
+from cloudbot import hook, event
 from cloudbot.util import database
+
 
 table = Table(
     "regex_chans",
@@ -16,6 +20,11 @@ table = Table(
 # If True, all channels without a setting will have regex enabled
 # If False, all channels without a setting will have regex disabled
 default_enabled = True
+
+QUEUE_MAX_LEN = 10
+events = {}
+
+plugin_whitelist = ["factoids"]
 
 
 @hook.on_start()
@@ -56,21 +65,85 @@ def delete_status(db, conn, chan):
     load_cache(db)
 
 
+def store_event(event):
+    global events
+    if (event.conn.name, event.chan) in events:
+        events[(event.conn.name, event.chan)].appendleft(event)
+    else:
+        events[(event.conn.name, event.chan)] = deque([event], QUEUE_MAX_LEN)
+
+
+def get_event(conn_name, chan, index=0):
+    """Returns the suppressed event at index"""
+    if (conn_name, chan) in events:
+        return events[(conn_name, chan)][index]
+
+
+def check_solicit_index(conn_name, chan, text):
+    """Check if .get <text> is a number, otherwise it's a direct regex command"""
+    if text:
+        try:
+            index = int(text)
+        except:
+            # NaN: Direct regex command
+            return (None, None)
+    else:
+        index = 0
+
+    # Allow both negative and positive syntax
+    if index < 0:
+        index *= -1
+    if (conn_name, chan) in events:
+        if index >= len(events[(conn_name, chan)]):
+            return (False, "Out of bounds. Max index: {}".format(len(events[(conn_name, chan)]) - 1))
+        return (True, index)
+    else:
+        return (False, None)
+
+
+@hook.command("get", autohelp=False)
+def solicit(bot, conn, text, chan, nick, user):
+    """[index] - Gets suppressed event at count [index] from most recent 0, defaulting to last"""
+    if text:
+        ret, value = check_solicit_index(conn.name, chan, text)
+        if ret is None:
+            # Run a new event directly with the force flag
+            e = event.Event(bot=bot, conn=conn, content=text, event_type=event.EventType.message, channel=chan, nick=nick, user=user, force=True)
+            asyncio.async(bot.process(e), loop=bot.loop)
+
+
 @hook.sieve()
 def sieve_regex(bot, event, _hook):
-    if _hook.type == "regex" and event.chan.startswith("#") and _hook.plugin.title != "factoids":
-        status = status_cache.get((event.conn.name, event.chan))
-        if status != "ENABLED" and (status == "DISABLED" or not default_enabled):
-            bot.logger.info("[{}] Denying {} from {}".format(event.conn.name, _hook.function_name, event.chan))
-            return None
-        bot.logger.info("[{}] Allowing {} to {}".format(event.conn.name, _hook.function_name, event.chan))
+    if _hook.type == "regex" and event.chan.startswith("#"):
+        if _hook.plugin.title not in plugin_whitelist:
+            if event.force:
+                bot.logger.info("Force run regex: {}".format(event.match.group()))
+                return event
+            status = status_cache.get((event.conn.name, event.chan))
+            if status != "ENABLED" and (status == "DISABLED" or not default_enabled):
+                bot.logger.info("[{}] Denying {} from {}. Storing in queue.".format(event.conn.name, _hook.function_name, event.chan))
+                store_event(event)
+                return
+            bot.logger.info("[{}] Allowing {} to {}".format(event.conn.name, _hook.function_name, event.chan))
+    elif _hook.type == "command" and _hook.function_name == "solicit":
+        # TODO get last regex of user if text is user?
+        ret, value = check_solicit_index(event.conn.name, event.chan, event.text)
+        if ret:
+            # number: valid index
+            return get_event(event.conn.name, event.chan, value)
+        elif ret is False:
+            # number: invalid index
+            if value:
+                event.message(value)
+            return
+        # ret is None: NaN: direct regex command (force flag) passes through solicit()
 
     return event
 
 
 @hook.command(autohelp=False, permissions=["botcontrol"])
 def enableregex(text, db, conn, chan, nick, message, notice):
-    text = text.strip().lower()
+    text = text.lower()
     if not text:
         channel = chan
     elif text.startswith("#"):
@@ -85,7 +158,7 @@ def enableregex(text, db, conn, chan, nick, message, notice):
 
 @hook.command(autohelp=False, permissions=["botcontrol"])
 def disableregex(text, db, conn, chan, nick, message, notice):
-    text = text.strip().lower()
+    text = text.lower()
     if not text:
         channel = chan
     elif text.startswith("#"):
@@ -100,7 +173,7 @@ def disableregex(text, db, conn, chan, nick, message, notice):
 
 @hook.command(autohelp=False, permissions=["botcontrol"])
 def resetregex(text, db, conn, chan, nick, message, notice):
-    text = text.strip().lower()
+    text = text.lower()
     if not text:
         channel = chan
     elif text.startswith("#"):
@@ -115,7 +188,7 @@ def resetregex(text, db, conn, chan, nick, message, notice):
 
 @hook.command(autohelp=False, permissions=["botcontrol"])
 def regexstatus(text, conn, chan):
-    text = text.strip().lower()
+    text = text.lower()
     if not text:
         channel = chan
     elif text.startswith("#"):

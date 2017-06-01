@@ -435,6 +435,7 @@ class PluginManager:
                 event = yield from self._sieve(sieve, event, hook)
                 if event is None:
                     return False
+                hook = event.hook
 
         if hook.type == "command" and hook.auto_help and not event.text and hook.doc is not None:
             event.notice_doc()

@@ -38,11 +38,12 @@ class Event:
     :type irc_command: str
     :type irc_paramlist: str
     :type irc_ctcp_text: str
+    :type force: bool
     """
 
     def __init__(self, *, bot=None, hook=None, conn=None, base_event=None, event_type=EventType.other, content=None,
                  target=None, channel=None, nick=None, user=None, host=None, mask=None, irc_raw=None, irc_prefix=None,
-                 irc_command=None, irc_paramlist=None, irc_ctcp_text=None):
+                 irc_command=None, irc_paramlist=None, irc_ctcp_text=None, force=False):
         """
         All of these parameters except for `bot` and `hook` are optional.
         The irc_* parameters should only be specified for IRC events.
@@ -68,6 +69,7 @@ class Event:
         :param irc_paramlist: The list of params for the IRC command. If the last param is a content param, the ':'
                                 should be removed from the front.
         :param irc_ctcp_text: CTCP text if this message is a CTCP command
+        :param force: Whether this event should be forced through (Force command/regex)
         :type bot: cloudbot.bot.CloudBot
         :type conn: cloudbot.client.Client
         :type hook: cloudbot.plugin.Hook
@@ -84,6 +86,7 @@ class Event:
         :type irc_command: str
         :type irc_paramlist: list[str]
         :type irc_ctcp_text: str
+        :type force: bool
         """
         self.db = None
         self.db_executor = None
@@ -114,6 +117,7 @@ class Event:
             self.irc_command = base_event.irc_command
             self.irc_paramlist = base_event.irc_paramlist
             self.irc_ctcp_text = base_event.irc_ctcp_text
+            self.force = base_event.force
         else:
             # Since base_event wasn't provided, we can take these parameters
             self.type = event_type
@@ -130,6 +134,7 @@ class Event:
             self.irc_command = irc_command
             self.irc_paramlist = irc_paramlist
             self.irc_ctcp_text = irc_ctcp_text
+            self.force = force
 
     @asyncio.coroutine
     def prepare(self):
@@ -329,7 +334,7 @@ class CommandEvent(Event):
 
     def __init__(self, *, bot=None, hook, text, triggered_command, conn=None, base_event=None, event_type=None,
                  content=None, target=None, channel=None, nick=None, user=None, host=None, mask=None, irc_raw=None,
-                 irc_prefix=None, irc_command=None, irc_paramlist=None):
+                 irc_prefix=None, irc_command=None, irc_paramlist=None, force=False):
         """
         :param text: The arguments for the command
         :param triggered_command: The command that was triggered
@@ -338,7 +343,7 @@ class CommandEvent(Event):
         """
         super().__init__(bot=bot, hook=hook, conn=conn, base_event=base_event, event_type=event_type, content=content,
                          target=target, channel=channel, nick=nick, user=user, host=host, mask=mask, irc_raw=irc_raw,
-                         irc_prefix=irc_prefix, irc_command=irc_command, irc_paramlist=irc_paramlist)
+                         irc_prefix=irc_prefix, irc_command=irc_command, irc_paramlist=irc_paramlist, force=force)
         self.hook = hook
         self.text = text
         self.doc = self.hook.doc
@@ -372,12 +377,12 @@ class RegexEvent(Event):
 
     def __init__(self, *, bot=None, hook, match, conn=None, base_event=None, event_type=None, content=None, target=None,
                  channel=None, nick=None, user=None, host=None, mask=None, irc_raw=None, irc_prefix=None,
-                 irc_command=None, irc_paramlist=None):
+                 irc_command=None, irc_paramlist=None, force=False):
         """
         :param: match: The match objected returned by the regex search method
         :type match: re.__Match
         """
         super().__init__(bot=bot, conn=conn, hook=hook, base_event=base_event, event_type=event_type, content=content,
                          target=target, channel=channel, nick=nick, user=user, host=host, mask=mask, irc_raw=irc_raw,
-                         irc_prefix=irc_prefix, irc_command=irc_command, irc_paramlist=irc_paramlist)
+                         irc_prefix=irc_prefix, irc_command=irc_command, irc_paramlist=irc_paramlist, force=force)
         self.match = match
