@@ -244,14 +244,23 @@ class CloudBot:
                 command_re = r'(?i)^(?:[{}]?|{}[,;:]+\s+)(\w+)(?:$|\s+)(.*)'.format(command_prefix, event.conn.nick)
             else:
                 command_re = r'(?i)^(?:[{}]|{}[,;:]+\s+)(\w+)(?:$|\s+)(.*)'.format(command_prefix, event.conn.nick)
+            # Inline command, with double prefix character (can still be at start of line)
+            inline_command_re = r'(?:^|\s+)[%s]{2}(\w+)\s+(.*)' % command_prefix
 
             cmd_match = re.match(command_re, event.content)
+            inline_cmd_match = re.search(inline_command_re, event.content)
 
-            if cmd_match:
-                command = cmd_match.group(1).lower()
+            if cmd_match or inline_cmd_match:
+                if cmd_match:
+                    command = cmd_match.group(1).lower()
+                    cmd_text = cmd_match.group(2).strip()
+                elif inline_cmd_match:
+                    command = inline_cmd_match.group(1).lower()
+                    cmd_text = inline_cmd_match.group(2).strip()
+
                 if command in self.plugin_manager.commands:
                     command_hook = self.plugin_manager.commands[command]
-                    command_event = CommandEvent(hook=command_hook, text=cmd_match.group(2).strip(),
+                    command_event = CommandEvent(hook=command_hook, text=cmd_text,
                                              triggered_command=command, base_event=event)
                     tasks.append(self.plugin_manager.launch(command_hook, command_event))
                 else:
@@ -262,7 +271,7 @@ class CloudBot:
                     if potential_matches:
                         if len(potential_matches) == 1:
                             command_hook = potential_matches[0][1]
-                            command_event = CommandEvent(hook=command_hook, text=cmd_match.group(2).strip(),
+                            command_event = CommandEvent(hook=command_hook, text=cmd_text,
                                                      triggered_command=command, base_event=event)
                             tasks.append(self.plugin_manager.launch(command_hook, command_event))
                         else:
