@@ -72,6 +72,7 @@ IRC_COLOUR_DICT = {
 IRC_FORMATTING_DICT = {
     "colour": "\x03",
     "color": "\x03",
+    "c": "\x03",
 
     "bold": "\x02",
     "b": "\x02",
@@ -90,9 +91,28 @@ IRC_FORMATTING_DICT = {
     "clear": "\x0F"
 }
 
+theme = {
+    "h1": "$(red)",
+    "/h1": "$(c)",
+    "h2": "$(blue)",
+    "/h2": "$(c)",
+    "div": "$(purple)|$(c)"
+}
+
 
 COLOR_RE = re.compile(r"\$\(.*?\)", re.I)
 IRC_COLOR_RE = re.compile(r"(\x03(\d+,\d+|\d)|[\x0f\x02\x16\x1f])", re.I)
+THEME_RE = re.compile(r"\[(/?\w+)\]", re.I)
+
+
+def set_theme(theme_dict):
+    """
+    Sets the theme for the bot.
+    """
+    global theme
+    theme = {}
+    for item in theme_dict:
+        theme[item] = theme_dict[item]
 
 
 def get_color(colour, return_formatted=True):
@@ -162,8 +182,11 @@ def parse(string):
     replace it with.
     """
 
+    regex = THEME_RE.findall(string)
     formatted = string
-    regex = COLOR_RE.findall(string)
+    for match in regex:
+        formatted = formatted.replace("[{}]".format(match), theme[match], 1)
+    regex = COLOR_RE.findall(formatted)
     for match in regex:
         formatted = formatted.replace(match, _convert(match), 1)
     return formatted

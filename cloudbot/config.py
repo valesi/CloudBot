@@ -72,6 +72,9 @@ class Config(dict):
             for connection in self.bot.connections.values():
                 connection.permissions.reload()
 
+        # reload theme
+        cloudbot.util.colors.set_theme(self.get("theme"))
+
     def save_config(self):
         """saves the contents of the config dict to the config file"""
         json.dump(self, open(self.path, 'w'), sort_keys=True, indent=4)

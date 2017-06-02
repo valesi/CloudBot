@@ -7,6 +7,7 @@ from ssl import SSLContext
 
 from cloudbot.client import Client
 from cloudbot.event import Event, EventType
+from cloudbot.util import colors
 
 logger = logging.getLogger("cloudbot")
 
@@ -149,15 +150,15 @@ class IrcClient(Client):
     def message(self, target, *messages):
         for text in messages:
             text = "".join(text.splitlines())
-            self.cmd("PRIVMSG", target, text)
+            self.cmd("PRIVMSG", target, colors.parse(text))
 
     def action(self, target, text):
         text = "".join(text.splitlines())
-        self.ctcp(target, "ACTION", text)
+        self.ctcp(target, "ACTION", colors.parse(text))
 
     def notice(self, target, text):
         text = "".join(text.splitlines())
-        self.cmd("NOTICE", target, text)
+        self.cmd("NOTICE", target, colors.parse(text))
 
     def set_nick(self, nick):
         self.cmd("NICK", nick)
