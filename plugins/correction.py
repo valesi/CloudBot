@@ -4,7 +4,7 @@ from cloudbot import hook
 
 from cloudbot.util.formatting import ireplace
 
-correction_re = re.compile(r"^[sS]/(.*/.*(?:/[igx]{,4})?)\S*$")
+correction_re = re.compile(r"^([^s])?[sS]/(.*/.*(?:/[igx]{,4})?)\S*$")
 
 
 @hook.regex(correction_re)
@@ -14,7 +14,7 @@ def correction(match, conn, nick, chan, message):
     :type conn: cloudbot.client.Client
     :type chan: str
     """
-    groups = [b.replace("\/", "/") for b in re.split(r"(?<!\\)/", match.groups()[0])]
+    groups = [b.replace("\/", "/") for b in re.split(r"(?<!\\)/", match.groups()[1])]
     find = groups[0]
     replace = groups[1]
     if find == replace:
@@ -28,12 +28,12 @@ def correction(match, conn, nick, chan, message):
 
         if find.lower() in msg.lower():
             if "\x01ACTION" in msg:
-                msg = msg.replace("\x01ACTION", "").replace("\x01", "")
+                msg = msg.replace("\x01ACTION ", "").replace("\x01", "")
                 mod_msg = ireplace(msg, find, "\x02" + replace + "\x02")
-                message("Correction, * {} {}".format(name, mod_msg))
+                message("* {} {}".format(name, mod_msg))
             else:
                 mod_msg = ireplace(msg, find, "\x02" + replace + "\x02")
-                message("Correction, <{}> {}".format(name, mod_msg))
+                message("<{}> {}".format(name, mod_msg))
 
             msg = ireplace(msg, find, replace)
             if nick.lower() == name.lower():

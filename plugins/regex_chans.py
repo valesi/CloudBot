@@ -123,6 +123,9 @@ def sieve_regex(bot, event, _hook):
                 return event
             status = status_cache.get((event.conn.name, event.chan))
             if status != "ENABLED" and (status == "DISABLED" or not default_enabled):
+                # Allow sed/correction with command prefix
+                if _hook.plugin.title == "correction":
+                    return event if event.match.group().startswith(prefix) else None
                 bot.logger.info("[{}] Denying {} from {}. Storing in queue.".format(event.conn.name, _hook.function_name, event.chan))
                 store_event(event)
                 return
