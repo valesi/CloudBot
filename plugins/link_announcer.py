@@ -46,7 +46,7 @@ def title(text, chan, conn):
         url = match.group()
     else:
         for line in conn.history[chan].__reversed__():
-            match = url_re.search(item[2])
+            match = url_re.search(line[2])
             if match:
                 url = match.group()
                 break
