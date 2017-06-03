@@ -44,23 +44,62 @@ CURRENCY_SIGNS = {
 # aliases
 @hook.command("bitcoin", "btc", autohelp=False)
 def bitcoin(text):
-    """ -- Returns current bitcoin value """
-    # alias
-    return crypto_command(" ".join(["btc", text]))
+    """ -- Returns current Bitcoin value """
+    return crypto_command("btc " + text)
+
+
+@hook.command("ethereum", "eth", autohelp=False)
+def ethereum(text):
+    """ -- Returns current Ethereum value """
+    return crypto_command("btc " + text)
+
+
+@hook.command("ethereum_classic", "etc", autohelp=False)
+def ethereum_classic(text):
+    """ -- Returns current Ethereum Classic value """
+    return crypto_command("etc " + text)
 
 
 @hook.command("litecoin", "ltc", autohelp=False)
 def litecoin(text):
-    """ -- Returns current litecoin value """
-    # alias
-    return crypto_command(" ".join(["ltc", text]))
+    """ -- Returns current Litecoin value """
+    return crypto_command("ltc " + text)
+
+
+@hook.command("nem", "xem", autohelp=False)
+def nemcoin(text):
+    """ -- Returns current NEM value """
+    return crypto_command("xem " + text)
+
+
+@hook.command("ripple", "xrp", autohelp=False)
+def ripple(text):
+    """ -- Returns current Ripple value """
+    return crypto_command("xrp " + text)
+
+
+@hook.command("dash", autohelp=False)
+def dash(text):
+    """ -- Returns current Dash value """
+    return crypto_command("dash " + text)
+
+
+@hook.command("monero", "xmr", autohelp=False)
+def monero(text):
+    """ -- Returns current Monero value """
+    return crypto_command("xmr " + text)
 
 
 @hook.command("dogecoin", "doge", autohelp=False)
 def dogecoin(text):
     """ -- Returns current dogecoin value """
-    # alias
-    return crypto_command(" ".join(["doge", text]))
+    return crypto_command("doge " + text)
+
+
+@hook.command("zcash", "zec", autohelp=False)
+def zcash(text):
+    """ -- Returns current Zcash value """
+    return crypto_command("zec " + text)
 
 
 # main command
@@ -97,7 +136,7 @@ def crypto_command(text):
     if change > 0:
         change_str = "$(green){}%$(c)".format(change)
     elif change < 0:
-        change_str = "$(brown){}%$(c)".format(change)
+        change_str = "$(red){}%$(c)".format(change)
     else:
         change_str = "{}%".format(change)
 
