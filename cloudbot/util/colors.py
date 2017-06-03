@@ -96,6 +96,10 @@ theme = {
     "/h1": "$(c)",
     "h2": "$(blue)",
     "/h2": "$(c)",
+    "h3": "$(dgrey)",
+    "/h3": "$(c)",
+    "h4": "$(grey)",
+    "/h4": "$(c)",
     "div": "$(purple)|$(c)"
 }
 
@@ -109,6 +113,8 @@ def set_theme(theme_dict):
     """
     Sets the theme for the bot.
     """
+    if not theme_dict:
+        return
     global theme
     theme = {}
     for item in theme_dict:
