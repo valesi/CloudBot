@@ -33,7 +33,7 @@ def correction(match, conn, nick, chan, message):
                 message("* {} {}".format(name, mod_msg))
             else:
                 mod_msg = ireplace(msg, find, "\x02" + replace + "\x02")
-                message("<{}> {}".format(name, mod_msg))
+                message("[h1]<{}>[/h1] {}".format(name, mod_msg))
 
             msg = ireplace(msg, find, replace)
             if nick.lower() == name.lower():
