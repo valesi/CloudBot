@@ -245,7 +245,7 @@ class CloudBot:
             else:
                 command_re = r'(?i)^(?:[{}]|{}[,;:]+\s+)(\w+)(?:$|\s+)(.*)'.format(command_prefix, event.conn.nick)
             # Inline command, with double prefix character (can still be at start of line)
-            inline_command_re = r'(?:^|\s+)[%s]{2}(\w+)\s+(.*)' % command_prefix
+            inline_command_re = r'(?:^|\s+)[%s]{2}(\w+)(?:\s+)?(.*)' % command_prefix
 
             cmd_match = re.match(command_re, event.content)
             inline_cmd_match = re.search(inline_command_re, event.content)
