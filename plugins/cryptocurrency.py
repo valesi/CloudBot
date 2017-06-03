@@ -51,7 +51,7 @@ def bitcoin(text):
 @hook.command("ethereum", "eth", autohelp=False)
 def ethereum(text):
     """ -- Returns current Ethereum value """
-    return crypto_command("btc " + text)
+    return crypto_command("eth " + text)
 
 
 @hook.command("ethereum_classic", "etc", autohelp=False)
