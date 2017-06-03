@@ -355,7 +355,7 @@ def message(text, conn, nick, message):
     channel = split[0]
     text = split[1]
     if logchannel:
-            message("{} used MESSAGE to make me SAY \"{}\" in {}.".format(nick, text, channel), logchannel)
+        message("{} used MESSAGE to make me SAY \"{}\" in {}.".format(nick, text, channel), logchannel)
     conn.message(channel, text)
 
 
