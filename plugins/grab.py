@@ -1,12 +1,15 @@
+import re
 import random
 
 from collections import defaultdict
-from sqlalchemy import Table, Column, String
+from sqlalchemy import Table, Column, String, Boolean, DateTime
+from sqlalchemy.sql import select
 from cloudbot import hook
 from cloudbot.util import database
 
 search_pages = defaultdict(list)
-search_page_indexes = {}
+
+added_responses = ['Bam!', 'Bang!', 'Shazam!', 'Ding!', 'Dong!', 'Kapow!', 'Oh snap!', 'Wham!', 'lol', 'Nailed it!', 'hahaha']
 
 table = Table(
     'grab',
@@ -29,11 +32,12 @@ def load_cache(db):
         quote = row["quote"]
         chan = row["chan"]
         if chan not in grab_cache:
-            grab_cache.update({chan:{name:[chan]}})
+            grab_cache.update({chan:{name:[quote]}})
         elif name not in grab_cache[chan]:
             grab_cache[chan].update({name:[quote]})
         else:
             grab_cache[chan][name].append(quote)
+
 
 def two_lines(bigstring, chan):
     """Receives a string with new lines. Groups the string into a list of strings with up to 3 new lines per string element. Returns first string element then stores the remaining list in search_pages."""
@@ -41,7 +45,7 @@ def two_lines(bigstring, chan):
     temp = bigstring.split('\n')
     for i in range(0, len(temp), 2):
         search_pages[chan].append('\n'.join(temp[i:i+2]))
-    search_page_indexes[chan] = 0
+    search_pages[chan+"index"] = 0
     return search_pages[chan][0]
 
 
@@ -52,11 +56,11 @@ def smart_truncate(content, length=355, suffix='...\n'):
         return content[:length].rsplit(' \u2022 ', 1)[0]+ suffix + content[:length].rsplit(' \u2022 ', 1)[1] + smart_truncate(content[length:])
 
 
-@hook.command("moregrab", autohelp=False)
+@hook.command("morequotes", "qm", "moregrab", autohelp=False)
 def moregrab(text, chan):
-    """if a grab search has lots of results the results are pagintated. If the most recent search is paginated the pages are stored for retreival. If no argument is given the next page will be returned else a page number can be specified."""
+    """If a grab search has lots of results the results are pagintated. If the most recent search is paginated the pages are stored for retreival. If no argument is given the next page will be returned else a page number can be specified."""
     if not search_pages[chan]:
-        return "There are grabsearch pages to show."
+        return "There are pages to show."
     if text:
         index = ""
         try:
@@ -68,20 +72,22 @@ def moregrab(text, chan):
         else:
             return "{}(page {}/{})".format(search_pages[chan][index-1], index, len(search_pages[chan]))
     else:
-        search_page_indexes[chan] += 1
-        if search_page_indexes[chan] < len(search_pages[chan]):
-            return "{}(page {}/{})".format(search_pages[chan][search_page_indexes[chan]], search_page_indexes[chan] + 1, len(search_pages[chan]))
+        search_pages[chan+"index"] += 1
+        if search_pages[chan+"index"] < len(search_pages[chan]):
+            return "{}(page {}/{})".format(search_pages[chan][search_pages[chan+"index"]], search_pages[chan+"index"] + 1, len(search_pages[chan]))
         else:
-            return "All pages have been shown you can specify a page number or do a new search."
+            return "All pages have been shown. You can specify a page number or do a new search."
+
 
 def check_grabs(name, quote, chan):
     try:
-        if quote in grab_cache[chan][name]:
+        if quote in grab_cache[chan][name.lower()]:
             return True
         else:
             return False
     except:
         return False
+
 
 def grab_add(nick, time, msg, chan, db, conn):
     # Adds a quote to the grab table
@@ -90,55 +96,58 @@ def grab_add(nick, time, msg, chan, db, conn):
     load_cache(db)
 
 
-@hook.command()
+@hook.command("quoteadd", "qadd", "qa", "grab", autohelp=False)
 def grab(text, nick, chan, db, conn):
-    """grab <nick> grabs the last message from the
-    specified nick and adds it to the quote database"""
+    """<nick> - grabs the last message from the specified nick and adds it to the quote database"""
+    text = text.strip()
+    if not text:
+        return grabrandom(text, chan)
+
     if text.lower() == nick.lower():
-        return "Didn't your mother teach you not to grab yourself?"
+        return "Think you're hot shit, eh?"
 
     for item in conn.history[chan].__reversed__():
         name, timestamp, msg = item
         if text.lower() == name.lower():
             # check to see if the quote has been added
-            if check_grabs(name.lower(), msg, chan):
-                return "I already have that quote from {} in the database".format(text)
+            if check_grabs(name, msg, chan):
+                return "I already have that quote in the database"
                 break
             else:
-                # the quote is new so add it to the db.
-                grab_add(name.lower(),timestamp, msg, chan, db, conn)
-                if check_grabs(name.lower(), msg, chan):
-                    return "the operation succeeded."
+                # the quote is new so add it to the db 
+                grab_add(name, timestamp, msg, chan, db, conn)
+                if check_grabs(name, msg, chan):
+                    return random.choice(added_responses)
                 break
-    return "I couldn't find anything from {} in recent history.".format(text)
+    #return "I couldn't find anything from {} in recent history.".format(text)
+
 
 def format_grab(name, quote):
     # add nonbreaking space to nicks to avoid highlighting people with printed grabs
     name = "{}{}{}".format(name[0], u"\u200B", name[1:])
     if quote.startswith("\x01ACTION") or quote.startswith("*"):
         quote = quote.replace("\x01ACTION", "").replace("\x01", "")
-        out = "* {}{}".format(name, quote)
-        return out
+        return "* {}{}".format(name, quote)
     else:
-        out = "<{}> {}".format(name, quote)
-        return out
+        return "<{}> {}".format(name, quote)
 
-@hook.command("lastgrab", "lgrab")
-def lastgrab(text, chan, message):
-    """prints the last grabbed quote from <nick>."""
+
+@hook.command("lquote", "lq", "lastgrab", "lgrab")
+def lastgrab(text, chan):
+    """Shows the last quote from <nick>."""
     lgrab = ""
     try:
         lgrab = grab_cache[chan][text.lower()][-1]
     except:
-        return "<{}> has never been grabbed.".format(text)
+        return "<{}> has never been quoted.".format(text)
     if lgrab:
         quote = lgrab
-        message(format_grab(text, quote),chan)
+        return format_grab(text, quote)
 
 
-@hook.command("grabrandom", "grabr", autohelp=False)
-def grabrandom(text, chan, message):
-    """grabs a random quote from the grab database"""
+@hook.command("q", "rquote", "quoterandom", "grabrandom", "grabr", autohelp=False)
+def grabrandom(text, chan):
+    """Shows a random quote from the quotes database"""
     grab = ""
     name = ""
     if text:
@@ -151,24 +160,24 @@ def grabrandom(text, chan, message):
         try:
             name = random.choice(list(grab_cache[chan].keys()))
         except:
-            return "I couldn't find any grabs in {}.".format(chan)
+            return "No one has been quoted in {}...".format(chan)
     try:
         grab = random.choice(grab_cache[chan][name.lower()])
     except:
-        return "it appears {} has never been grabbed in {}".format(name, chan)
+        return "{} is boring and has never been quoted in here".format(name)
     if grab:
-        message(format_grab(name, grab), chan)
+        return format_grab(name, grab)
     else:
         return "Hmmm try grabbing a quote first."
 
 
-@hook.command("grabsearch", "grabs", autohelp=False)
+@hook.command("quotesearch", "quotes", "qs", "grabsearch", "grabs", autohelp=False)
 def grabsearch(text, chan):
-    """.grabsearch <text> matches "text" against nicks or grab strings in the database"""
+    """<text> - matches "text" against nicks or quote strings in the database"""
     out = ""
     result = []
     search_pages[chan] = []
-    search_page_indexes[chan] = 0
+    search_pages[chan+"index"] = 0
     try:
         quotes = grab_cache[chan][text.lower()]
         for grab in quotes:
@@ -177,13 +186,13 @@ def grabsearch(text, chan):
        pass
     for name in grab_cache[chan]:
         for grab in grab_cache[chan][name]:
-            if name != text.lower():
+            if name.lower() != text.lower():
                 if text.lower() in grab.lower():
                     result.append((name, grab))
     if result:
         for grab in result:
             name = grab[0]
-            if text.lower() == name:
+            if text.lower() == name.lower():
                 name = text
             quote = grab[1]
             out += "{} {} ".format(format_grab(name, quote), u'\u2022')
@@ -191,7 +200,7 @@ def grabsearch(text, chan):
         out = out[:-2]
         out = two_lines(out, chan)
         if len(search_pages[chan]) > 1:
-            return "{}(page {}/{}) .moregrab".format(out, search_page_indexes[chan] + 1, len(search_pages[chan]))
+            return "{}(page {}/{}) .qm".format(out, search_pages[chan+"index"] + 1 , len(search_pages[chan]))
         return out
     else:
         return "I couldn't find any matches for {}.".format(text)
