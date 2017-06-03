@@ -4,6 +4,8 @@ from cloudbot import hook
 from cloudbot.util import web, formatting
 
 shortcuts = {
+    'origin': 'valesi/CloudBot',
+    'upstream': 'edwardslabs/CloudBot',
     'cloudbot': 'CloudBotIRC/CloudBot'
 }
 
@@ -16,7 +18,7 @@ def issue(text):
     issue = args[1] if len(args) > 1 else None
 
     if issue:
-        r = requests.get('https://api.github.com/repos/{}/issues/{}'.format(repo, issue))
+        r = requests.get('https://api.github.com/repos/{}/issues/{}'.format(repo, issue), timeout=10.0)
         j = r.json()
 
         url = web.try_shorten(j['html_url'], service='git.io')
@@ -30,7 +32,7 @@ def issue(text):
 
         return 'Issue #{} ({}): {} [div] {}: {}'.format(number, state, url, title, summary)
     else:
-        r = requests.get('https://api.github.com/repos/{}/issues'.format(repo))
+        r = requests.get('https://api.github.com/repos/{}/issues'.format(repo), timeout=10.0)
         j = r.json()
 
         count = len(j)
