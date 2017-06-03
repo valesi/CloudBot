@@ -159,8 +159,7 @@ def enableregex(text, db, conn, chan, nick, message, notice):
     else:
         channel = "#{}".format(text)
 
-    message("Enabling regex matching", target=channel)
-    notice("Enabling regex matching in channel {}".format(channel))
+    message("Enabling regex matching in " + channel)
     set_status(db, conn.name, channel, "ENABLED")
 
 
@@ -174,8 +173,7 @@ def disableregex(text, db, conn, chan, nick, message, notice):
     else:
         channel = "#{}".format(text)
 
-    message("Disabling regex matching", target=channel)
-    notice("Disabling regex matching in channel {}".format(channel))
+    message("Disabling regex matching in " + channel)
     set_status(db, conn.name, channel, "DISABLED")
 
 
@@ -189,8 +187,7 @@ def resetregex(text, db, conn, chan, nick, message, notice):
     else:
         channel = "#{}".format(text)
 
-    message("Resetting regex matching setting", target=channel)
-    notice("Resetting regex matching setting in channel {}".format(channel))
+    message("Resetting regex matching in " + channel)
     delete_status(db, conn.name, channel)
 
 
