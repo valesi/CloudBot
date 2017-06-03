@@ -9,6 +9,8 @@ from cloudbot import hook
 base_url = 'https://maps.googleapis.com/maps/api/'
 geocode_api = base_url + 'geocode/json'
 timezone_api = base_url + 'timezone/json'
+time_fmt = '%H:%M, %A %B %d, %Y'
+time_fmt_sec = '%H:%M:%S, %A %B %d, %Y'
 
 # Change this to a ccTLD code (eg. uk, nz) to make results more targeted towards that specific country.
 # <https://developers.google.com/maps/documentation/geocoding/#RegionCodes>
@@ -47,24 +49,35 @@ def time_command(text):
     """<location> -- Gets the current time in <location>."""
     if not dev_key:
         return "This command requires a Google Developers Console API key."
+
+    if text.lower() == "unix":
+        return str(time.time())
+    if text.lower().startswith("unix "):
+        try:
+            timestamp = float(text.split()[1])
+            return time.strftime(time_fmt_sec, time.gmtime(timestamp))
+        except:
+            return "Invalid timestamp"
     
     if text.lower().startswith("utc") or text.lower().startswith("gmt"):
-        timezone = text.strip()
+        timezone = text.upper()
         pattern = re.compile(r"utc|gmt|[:+]")
-        utcoffset = [x for x in pattern.split(text.lower()) if x]
-        if len(utcoffset) > 2:
-           return "Please specify a valid UTC/GMT format Example: UTC-4, UTC+7 GMT7"
-        if len(utcoffset) == 1:
-           utcoffset.append('0')
-        if len(utcoffset) == 2:
-           try:
-               offset = datetime.timedelta(hours=int(utcoffset[0]), minutes=int(utcoffset[1]))
-           except:
-               return "Sorry I could not parse the UTC format you entered. Example UTC7 or UTC-4"
-           curtime = datetime.datetime.utcnow()
-           tztime = curtime + offset
-           formatted_time = datetime.datetime.strftime(tztime, '%I:%M %p, %A, %B %d, %Y')
-           return "\x02{}\x02 ({})".format(formatted_time, timezone)
+        gmtoffset = [x for x in pattern.split(text.lower()) if x]
+        if len(gmtoffset) > 2:
+            return "Please specify a valid UTC/GMT format. Examples: GMT-4, GMT+7, GMT7"
+        if not gmtoffset:
+            gmtoffset.extend(["0","0"])
+        elif len(gmtoffset) == 1:
+            gmtoffset.append('0')
+        if len(gmtoffset) == 2:
+            try:
+                offset = datetime.timedelta(hours=int(gmtoffset[0]), minutes=int(gmtoffset[1]))
+            except:
+                return "Sorry I could not parse the UTC format you entered. Example UTC7 or UTC-4"
+            curtime = datetime.datetime.utcnow()
+            tztime = curtime + offset
+            formatted_time = datetime.datetime.strftime(tztime, time_fmt)
+            return "{} [div] {}".format(formatted_time, timezone)
            
     # Use the Geocoding API to get co-ordinates from the input
     params = {"address": text, "key": dev_key}
@@ -100,7 +113,7 @@ def time_command(text):
     # I'm telling the time module to parse the data as GMT, but whatever, it doesn't matter
     # what the time module thinks the timezone is. I just need dumb time formatting here.
     raw_time = time.gmtime(epoch + offset)
-    formatted_time = time.strftime('%I:%M %p, %A, %B %d, %Y', raw_time)
+    formatted_time = time.strftime(time_fmt, raw_time)
 
     timezone = json['timeZoneName']
 
