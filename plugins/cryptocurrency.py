@@ -105,7 +105,7 @@ def zcash(text):
 # main command
 @hook.command("crypto", "cryptocurrency")
 def crypto_command(text):
-    """ <ticker> [currency] -- Returns current value of a cryptocurrency """
+    """<ticker> [currency] -- Returns current value of a cryptocurrency. [currency] defaults to USD."""
     args = text.split()
     ticker = args.pop(0)
 
@@ -115,8 +115,7 @@ def crypto_command(text):
         else:
             currency = args.pop(0).lower()
 
-        encoded = quote_plus(ticker)
-        request = requests.get(API_URL.format(encoded))
+        request = requests.get(API_URL.format(quote_plus(ticker)))
         request.raise_for_status()
     except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as e:
         return "Could not get value: {}".format(e)
@@ -126,11 +125,14 @@ def crypto_command(text):
     if "error" in data:
         return "{}.".format(data['error'])
 
+    if currency not in data['price']:
+        return "Currencies supported: {}".format(", ".join(list(data['price'])).upper())
+
     updated_time = datetime.fromtimestamp(float(data['timestamp']))
     if (datetime.today() - updated_time).days > 2:
         # the API retains data for old ticker names that are no longer updated
         # in these cases we just return a "not found" message
-        return "Currency not found."
+        return "{} ticker info outdated".format(ticker.upper())
 
     change = float(data['change'])
     if change > 0:
@@ -140,10 +142,8 @@ def crypto_command(text):
     else:
         change_str = "{}%".format(change)
 
-    currency_sign = CURRENCY_SIGNS[currency]
-
     return "[h1]{}:[/h1] {}{:,.2f} {} [h3]({:,.7f} BTC)[/h3] [div] {} 24hr change".format(data['symbol'].upper(),
-                                                                            currency_sign,
+                                                                            CURRENCY_SIGNS[currency],
                                                                             float(data['price'][currency]),
                                                                             currency.upper(),
                                                                             float(data['price']['btc']),
