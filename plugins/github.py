@@ -17,9 +17,14 @@ shortcuts = {
 
 def get_data(url, headers=HEADERS):
     try:
-        return (True, requests.get(url, headers=headers, timeout=10.0).json())
+        r = requests.get(url, headers=headers, timeout=10.0)
+        data = r.json()
+        if r.ok:
+            return (True, data)
+        else:
+            return (False, "API Error: {}".format(data["message"] if data else "Empty response"))
     except Exception as ex:
-        return (False, "API Error: {}".format(ex))
+        return (False, "Error: {}".format(ex))
 
 
 @hook.command("ghissue", "issue")
