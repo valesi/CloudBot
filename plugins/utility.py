@@ -121,6 +121,7 @@ def swapcase(text):
     """<string> -- Swaps the capitalization of <string>."""
     return text.swapcase()
 
+
 @hook.command("aesthetic", "vapor", "fw")
 def fullwidth(text):
     """<string> -- Converts <string> to full width characters."""
@@ -129,6 +130,7 @@ def fullwidth(text):
         '０１２３４５６７８９ａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ！゛＃＄％＆（）＊＋、ー。／：；〈＝〉？＠［］＾＿‘｛｜｝～'
     )
     return text.translate(HALFWIDTH_TO_FULLWIDTH)
+
 
 # encoding
 

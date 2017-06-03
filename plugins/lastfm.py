@@ -151,9 +151,9 @@ def lastfm(text, nick, db, bot, notice):
 
     out = '{} {} "{}"'.format(user, status, title)
     if artist:
-        out += " by \x02{}\x0f".format(artist)
+        out += " by \x02{}\x02".format(artist)
     if album:
-        out += " from the album \x02{}\x0f".format(album)
+        out += " from the album \x02{}\x02".format(album)
     if playcount:
         out += " [playcount: {}]".format(playcount)
     else:

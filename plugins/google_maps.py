@@ -68,4 +68,4 @@ def maps(text):
 
     tags = ", ".join(tags).replace("_", " ")
 
-    return "\x02{}\x02 - {} ({})".format(location_name, url, tags)
+    return "[h1]Maps:[/h1] {} [div] {} [div] [h3]{}[/h3]".format(location_name, url, tags)

@@ -100,4 +100,4 @@ def geoip(text, reply, loop):
     if location_data.subdivisions.most_specific.name:
         data["city"] += ", " + location_data.subdivisions.most_specific.name
 
-    reply("IP: {} | Country: {country} ({cc}) | City: {city}".format(ip, **data))
+    reply("[h1]IP:[/h1] {} [div] [h1]Country:[/h1] {country} ({cc}) [div] [h1]City:[/h1] {city}".format(ip, **data))

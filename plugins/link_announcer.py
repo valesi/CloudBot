@@ -5,7 +5,7 @@ from contextlib import closing
 from cloudbot import hook
 
 # This will match any URL except the patterns defined in blacklist.
-blacklist = '.*(reddit\.com|redd\.it|youtube\.com|youtu\.be|spotify\.com|twitter\.com|twitch\.tv|amazon\.co|xkcd\.com|amzn\.co|steamcommunity\.com|steampowered\.com|newegg\.com|soundcloud\.com|vimeo\.com).*'
+blacklist = '.*(reddit\.com|redd\.it|youtube\.com|youtu\.be|spotify\.com|twitter\.com|twitch\.tv|ama?zo?n\.(?:\w+(?:\.\w+)?)|xkcd\.com|steamcommunity\.com|steampowered\.com|newegg\.com|soundcloud\.com|speedtest\.net|vimeo\.com).*'
 url_re = re.compile('(?!{})http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+~]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'.format(blacklist), re.I)
 
 opt_out = []
@@ -71,7 +71,7 @@ def get_title(url):
                 r.close()
                 content = r.headers['content-type']
                 size = bytesto(r.headers['content-length'])
-                return "Content Type: {} | Size: {}".format(content, size)
+                return "[h1]Content Type:[/h1] {} [div] [h1]Size:[/h1] {}".format(content, size)
             # Sites advertising ISO-8859-1 are often lying
             if r.encoding == 'ISO-8859-1':
                 r.encoding = "utf-8"

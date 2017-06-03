@@ -48,10 +48,7 @@ def twitter_url(match):
     # Format the return the text of the tweet
     text = " ".join(tweet.text.split())
 
-    if user.verified:
-        prefix = "\u2713"
-    else:
-        prefix = ""
+    prefix = "\u2713" if user.verified else ""
 
     time = timeformat.time_since(tweet.created_at, datetime.utcnow())
 
@@ -106,14 +103,14 @@ def twitter(text):
 
         # if the timeline is empty, return an error
         if not user_timeline:
-            return "The user \x02{}\x02 has no tweets.".format(user.screen_name)
+            return "\x02{}\x02 has no tweets.".format(user.screen_name)
 
         # grab the newest tweet from the users timeline
         try:
             tweet = user_timeline[tweet_number]
         except IndexError:
             tweet_count = len(user_timeline)
-            return "The user \x02{}\x02 only has \x02{}\x02 tweets.".format(user.screen_name, tweet_count)
+            return "\x02{}\x02 only has \x02{}\x02 tweets.".format(user.screen_name, tweet_count)
 
     elif re.match(r'^#\w+$', text):
         # user is searching by hashtag
@@ -157,20 +154,10 @@ def twuser(text):
         else:
             return "Error: {}".format(e.reason)
 
-    if user.verified:
-        prefix = "\u2713"
-    else:
-        prefix = ""
-
-    if user.location:
-        loc_str = " is located in \x02{}\x02 and".format(user.location)
-    else:
-        loc_str = ""
-
-    if user.description:
-        desc_str = " The users description is \"{}\"".format(user.description)
-    else:
-        desc_str = ""
+    
+    prefix = "\u2713" if user.verified else ""
+    loc_str = " is located in \x02{}\x02 and".format(user.location) if user.location else ""
+    desc_str = " The users description is \"{}\"".format(user.description) if user.description else ""
 
     return "{}@\x02{}\x02 ({}){} has \x02{:,}\x02 tweets and \x02{:,}\x02 followers.{}" \
            "".format(prefix, user.screen_name, user.name, loc_str, user.statuses_count, user.followers_count,

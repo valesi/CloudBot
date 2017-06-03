@@ -24,11 +24,11 @@ def issue(text):
         title = j['title']
         summary = formatting.truncate(j['body'].split('\n')[0], 25)
         if j['state'] == 'open':
-            state = '\x033\x02Opened\x02\x0f by {}'.format(j['user']['login'])
+            state = '$(green)Opened$(c) by {}'.format(j['user']['login'])
         else:
-            state = '\x034\x02Closed\x02\x0f by {}'.format(j['closed_by']['login'])
+            state = '$(red)Closed$(c) by {}'.format(j['closed_by']['login'])
 
-        return 'Issue #{} ({}): {} | {}: {}'.format(number, state, url, title, summary)
+        return 'Issue #{} ({}): {} [div] {}: {}'.format(number, state, url, title, summary)
     else:
         r = requests.get('https://api.github.com/repos/{}/issues'.format(repo))
         j = r.json()

@@ -20,6 +20,25 @@ import requests
 from cloudbot import hook
 
 API_URL = "https://coinmarketcap-nexuist.rhcloud.com/api/{}"
+CURRENCY_SIGNS = {
+    "usd": "$",
+    "eur": "€",
+    "cny": "¥",
+    "gbp": "£",
+    "cad": "$",
+    "rub": "₽",
+    "hkd": "$",
+    "jpy": "¥",
+    "aud": "$",
+    "brl": "R$",
+    "inr": "₹",
+    "krw": "₩",
+    "mxn": "$",
+    "idr": "Rp",
+    "chf": "CHF",
+    "btc": "฿"  # Thai Baht
+#    "btc": "₿"  # official symbol in Unicode (\x20bf)
+}
 
 
 # aliases
@@ -76,20 +95,15 @@ def crypto_command(text):
 
     change = float(data['change'])
     if change > 0:
-        change_str = "\x033 {}%\x0f".format(change)
+        change_str = "$(green){}%$(c)".format(change)
     elif change < 0:
-        change_str = "\x035 {}%\x0f".format(change)
+        change_str = "$(brown){}%$(c)".format(change)
     else:
         change_str = "{}%".format(change)
 
-    if currency == 'gbp':
-        currency_sign = '£'
-    elif currency == 'eur':
-        currency_sign = '€'
-    else:
-        currency_sign = '$'
+    currency_sign = CURRENCY_SIGNS[currency]
 
-    return "{} // \x0307{}{:,.2f}\x0f {} - {:,.7f} BTC // {} change".format(data['symbol'].upper(),
+    return "[h1]{}:[/h1] {}{:,.2f} {} [h3]({:,.7f} BTC)[/h3] [div] {} 24hr change".format(data['symbol'].upper(),
                                                                             currency_sign,
                                                                             float(data['price'][currency]),
                                                                             currency.upper(),

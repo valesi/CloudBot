@@ -124,8 +124,9 @@ def weather(text, reply, db, nick, notice):
         "tomorrow_low_c": forecast_tomorrow['low']['celsius']
     }
 
-    reply("{place}: {conditions}, {temp_f}F/{temp_c}C, {humidity}, "
-          "Wind: {wind_mph}MPH/{wind_kph}KPH {wind_direction}, \x02Today:\x02 {today_conditions}, "
-          "High: {today_high_f}F/{today_high_c}C, Low: {today_low_f}F/{today_low_c}C. "
-          "\x02Tomorrow:\x02 {tomorrow_conditions}, High: {tomorrow_high_f}F/{tomorrow_high_c}C, "
-          "Low: {tomorrow_low_f}F/{tomorrow_low_c}C".format(**weather_data))
+    reply("[h1]{place}:[/h1] {conditions}, {temp_c}°C ({temp_f}°F), {humidity}RH, "
+          "Wind {wind_kph}km/h ({wind_mph}mph) {wind_direction} [div] [h1]Today:[/h1] {today_conditions}, "
+          "High {today_high_c}°C ({today_high_f}°F), Low {today_low_c}°C ({today_low_f}°F) [div] "
+          "[h1]Tomorrow:[/h1] {tomorrow_conditions}, High {tomorrow_high_c}°C ({tomorrow_high_f}°F), "
+          "Low {tomorrow_low_c}°C ({tomorrow_low_f}°F)".format(**weather_data))
+

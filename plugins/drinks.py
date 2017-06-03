@@ -18,7 +18,7 @@ def drink(text, chan, action):
     """<nick>, makes the user a random cocktail."""
     index = random.randint(0,len(drinks)-1)
     drink = drinks[index]['title']
-    url = web.try_shorten(drinks[index]['url'])
+    url = drinks[index]['url']
     if drink.endswith(' recipe'):
         drink = drink[:-7]
     contents = drinks[index]['ingredients']
@@ -29,6 +29,6 @@ def drink(text, chan, action):
             out += " and {}".format(x)
         else:
             out += " {},".format(x)
-    out += "\x0F and makes {} a(n) \x02{}\x02. {}".format(text, drink, url)
+    out += " and makes {} a(n) $(b){}$(b) [div] [h3]{}[/h3]".format(text, drink, url)
     action(out, chan)
 

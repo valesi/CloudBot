@@ -104,7 +104,7 @@ def time_command(text):
 
     timezone = json['timeZoneName']
 
-    return "\x02{}\x02 - {} ({})".format(formatted_time, location_name, timezone)
+    return "{} [div] {} [div] {}".format(formatted_time, location_name, timezone)
 
 
 @hook.command(autohelp=False)

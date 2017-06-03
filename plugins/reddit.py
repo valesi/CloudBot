@@ -6,6 +6,7 @@ import functools
 import urllib.parse
 
 import requests
+from html.parser import HTMLParser
 
 from cloudbot import hook
 from cloudbot.util import timeformat, formatting
@@ -13,43 +14,65 @@ from cloudbot.util import timeformat, formatting
 
 reddit_re = re.compile(r'.*(((www\.)?reddit\.com/r|redd\.it)[^ ]+)', re.I)
 
-base_url = "http://reddit.com/r/{}/.json"
-short_url = "http://redd.it/{}"
+base_url = "https://reddit.com/r/{}/.json"
+short_url = "https://redd.it/{}"
 
 
 def format_output(item, show_url=False):
     """ takes a reddit post and returns a formatted string """
-    item["title"] = formatting.truncate(item["title"], 70)
+    item["title"] = formatting.truncate(item["title"], 200)
     item["link"] = short_url.format(item["id"])
+
+    # Fix some URLs
+    if not item["is_self"] and item["url"]:
+        if "imgur.com/" in item["url"]:
+            # Force TLS for imgur
+            if item["url"].startswith("http://"):
+                item["url"] = item["url"].replace("http://", "https://")
+            # Use .gifv links
+            if item["url"].endswith(".gif"):
+                item["url"] += "v"
+        # Fix i.reddituploads.com crap ("&amp;" in URL)
+        if "i.reddituploads.com/" in item["url"]:
+            # Get i.redditmedia.com preview (first one is full size)
+            item["url"] = item["preview"]["images"][0]["source"]["url"]
+        # Unescape since reddit gives links for HTML
+        item["url"] = HTMLParser().unescape(item["url"])
 
     raw_time = datetime.fromtimestamp(int(item["created_utc"]))
     item["timesince"] = timeformat.time_since(raw_time, count=1, simple=True)
 
-    item["comments"] = formatting.pluralize(item["num_comments"], 'comment')
-    item["points"] = formatting.pluralize(item["score"], 'point')
+    item["comments"] = formatting.pluralize(item["num_comments"], 'comment').replace(",", "")
+    item["points"] = formatting.pluralize(item["score"], 'point').replace(",", "")
 
+    out = "[h1]Reddit:[/h1]"
+
+    out += " {title}"
+    if not item["is_self"]:
+        out += " [div] {url}"
     if item["over_18"]:
-        item["warning"] = " \x02NSFW\x02"
-    else:
-        item["warning"] = ""
+        out += " [div] $(red)NSFW$(c)"
+    if show_url and item["link"]:
+        out += " [div] {link}"
 
-    if show_url:
-        return "\x02{title} : {subreddit}\x02 - {comments}, {points}" \
-               " - \x02{author}\x02 {timesince} ago - {link}{warning}".format(**item)
-    else:
-        return "\x02{title} : {subreddit}\x02 - {comments}, {points}" \
-               " - \x02{author}\x02, {timesince} ago{warning}".format(**item)
+    out += " [div] /r/{subreddit} [div] /u/{author} [div] {timesince} ago [div] {points} [div] {comments}"
+
+    if item["gilded"]:
+        item["gilded"] = formatting.pluralize(item["gilded"], 'gild')
+        out += " [div] $(yellow){gilded}$(c)"
+
+    return out.format(**item)
 
 
 @hook.regex(reddit_re)
 def reddit_url(match, bot):
     url = match.group(1)
     if "redd.it" in url:
-        url = "http://" + url
+        url = "https://" + url
         response = requests.get(url)
         url = response.url + "/.json"
     if not urllib.parse.urlparse(url).scheme:
-        url = "http://" + url + "/.json"
+        url = "https://" + url + "/.json"
 
     # the reddit API gets grumpy if we don't include headers
     headers = {'User-Agent': bot.user_agent}
@@ -87,7 +110,7 @@ def reddit(text, bot, loop):
         else:
             url = base_url.format(parts[0].strip())
     else:
-        url = "http://reddit.com/.json"
+        url = "https://reddit.com/.json"
 
     try:
         # Again, identify with Reddit using an User Agent, otherwise get a 429

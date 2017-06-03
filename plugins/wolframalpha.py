@@ -10,8 +10,10 @@ from cloudbot.util import web, formatting
 # security
 parser = etree.XMLParser(resolve_entities=False, no_network=True)
 
-api_url = 'http://api.wolframalpha.com/v2/query'
-query_url = 'http://www.wolframalpha.com/input/?i={}'
+api_url = 'https://api.wolframalpha.com/v2/query'
+query_url = 'https://www.wolframalpha.com/input/?i={}'
+
+show_pods = {'Input': True, 'Result': True, 'UnitConversion': True, 'AdditionalConversion': True}
 
 
 @hook.command("wolframalpha", "wa", "calc", "ca", "math", "convert")
@@ -23,17 +25,19 @@ def wolframalpha(text, bot):
 
     params = {
         'input': text,
+        'format': "plaintext",
         'appid': api_key
     }
     request = requests.get(api_url, params=params)
+    url = query_url.format(urllib.parse.quote_plus(text))
 
     if request.status_code != requests.codes.ok:
-        return "Error getting query: {}".format(request.status_code)
+        return "Error getting query: {} [div] {}".format(request.status_code, url)
 
     result = etree.fromstring(request.content, parser=parser)
 
     # get the URL for a user to view this query in a browser
-    short_url = web.try_shorten(query_url.format(urllib.parse.quote_plus(text)))
+    #short_url = web.try_shorten(query_url.format(urllib.parse.quote_plus(text)))
 
     pod_texts = []
     for pod in result.xpath("//pod[@primary='true']"):
@@ -62,4 +66,4 @@ def wolframalpha(text, bot):
     if not ret:
         return 'No results.'
 
-    return "{} - {}".format(ret, short_url)
+    return "{} [div] {}".format(ret, url)

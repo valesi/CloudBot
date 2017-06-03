@@ -29,7 +29,8 @@ def load_api(bot):
     dev_key = bot.config.get("api_keys", {}).get("google_dev_key", None)
     cx = bot.config.get("api_keys", {}).get("google_cse_id", None)
 
-@hook.command('gse')
+
+@hook.command("google", "g", "gse", "search")
 def gse(text):
     """<query> -- Returns first Google search result for <query>."""
     if not dev_key:
@@ -39,22 +40,25 @@ def gse(text):
 
     parsed = requests.get(API_CS, params={"cx": cx, "q": text, "key": dev_key}).json()
 
+    if "error" in list(parsed) and len(parsed["error"]) > 0:
+        return "Error: {}".format(parsed["error"])
+
     try:
         result = parsed['items'][0]
     except KeyError:
         return "No results found."
 
-    title = formatting.truncate_str(result['title'], 60)
-    content = result['snippet']
+    title = formatting.truncate_str(result['title'], 250)
+    #content = result['snippet']
 
-    if not content:
-        content = "No description available."
-    else:
-        content = formatting.truncate_str(content.replace('\n', ''), 150)
+    #if not content:
+    #    content = ""
+    #else:
+    #    content = formatting.truncate_str(content.replace('\n', ''), 150)
 
-    return u'{} -- \x02{}\x02: "{}"'.format(result['link'], title, content)
+    return u'{} [div] {}'.format(result['link'], title)
 
-@hook.command('gseis', 'image')
+@hook.command('image', 'img', 'gseis')
 def gse_gis(text):
     """<query> -- Returns first Google Images result for <query>."""
     if not dev_key:

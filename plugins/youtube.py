@@ -19,7 +19,7 @@ video_url = "http://youtu.be/%s"
 err_no_api = "The YouTube API is off in the Google Developers Console."
 
 
-def get_video_description(video_id):
+def get_video_description(video_id, show_url=False):
     json = requests.get(api_url.format(video_id, dev_key)).json()
 
     if json.get('error'):
@@ -33,40 +33,42 @@ def get_video_description(video_id):
     statistics = data[0]['statistics']
     content_details = data[0]['contentDetails']
 
-    out = '\x02{}\x02'.format(snippet['title'])
+    out = '[h1]YT:[/h1]'
 
-    if not content_details.get('duration'):
+    if show_url:
+        out += ' [h3]https://youtu.be/{}[/h3] [div]'.format(video_id)
+
+    out += ' {}'.format(snippet['title'])
+
+    if 'duration' not in content_details:
         return out
 
-    length = isodate.parse_duration(content_details['duration'])
-    out += ' - length \x02{}\x02'.format(timeformat.format_time(int(length.total_seconds()), simple=True))
-    try:
-        total_votes = float(statistics['likeCount']) + float(statistics['dislikeCount'])
-    except:
-        total_votes = 0
-        pass
-
-    if total_votes != 0:
-        # format
-        likes = pluralize(int(statistics['likeCount']), "like")
-        dislikes = pluralize(int(statistics['dislikeCount']), "dislike")
-
-        percent = 100 * float(statistics['likeCount']) / total_votes
-        out += ' - {}, {} (\x02{:.1f}\x02%)'.format(likes,
-                                                    dislikes, percent)
-
-    if 'viewCount' in statistics:
-        views = int(statistics['viewCount'])
-        out += ' - \x02{:,}\x02 view{}'.format(views, "s"[views == 1:])
+    if 'contentRating' in content_details:
+        out += ' [div] $(red)NSFW$(c)'
 
     uploader = snippet['channelTitle']
+    out += ' [div] {}'.format(uploader)
 
-    upload_time = time.strptime(snippet['publishedAt'], "%Y-%m-%dT%H:%M:%S.000Z")
-    out += ' - \x02{}\x02 on \x02{}\x02'.format(uploader,
-                                                time.strftime("%Y.%m.%d", upload_time))
+    length = isodate.parse_duration(content_details.get('duration'))
+    out += ' [div] {}'.format(timeformat.format_time(int(length.total_seconds()), simple=True))
 
-    if 'contentRating' in content_details:
-        out += ' - \x034NSFW\x02'
+    upload_time = time.strptime(snippet.get('publishedAt'), "%Y-%m-%dT%H:%M:%S.000Z")
+    out += ' [div] {}'.format(time.strftime("%Y-%m-%d", upload_time))
+
+    # Some videos/channels don't give this info??
+    if 'statistics' in data[0]:
+        statistics = data[0]['statistics']
+    else:
+        return out
+
+    if statistics.get('viewCount'):
+        views = int(statistics.get('viewCount'))
+        out += u' [div] {:,} $(blue)\U0001f441$(c)'.format(views)
+
+    if statistics.get('likeCount'):
+        likes = u'{:,} $(green)\U0001F44D$(c)'.format(int(statistics.get('likeCount')))
+        dislikes = u'{:,} $(red)\U0001F44E$(c)'.format(int(statistics.get('dislikeCount')))
+        out += ' [div] {} {}'.format(likes, dislikes)
 
     return out
 
@@ -101,7 +103,7 @@ def youtube(text):
     
     video_id = json['items'][0]['id']['videoId']
 
-    return get_video_description(video_id) + " - " + video_url % video_id
+    return get_video_description(video_id, show_url=True)
 
 
 @hook.command("youtime", "ytime")
@@ -142,8 +144,7 @@ def youtime(text):
     length_text = timeformat.format_time(l_sec, simple=True)
     total_text = timeformat.format_time(total, accuracy=8)
 
-    return 'The video \x02{}\x02 has a length of {} and has been viewed {:,} times for ' \
-           'a total run time of {}!'.format(snippet['title'], length_text, views,
+    return '{}: [h1]Length:[/h1] {} [div] [h1]Views:[/h1] {:,} [div] [h1]Total run time:[/h1] {}'.format(snippet['title'], length_text, views,
                                             total_text)
 
 
@@ -168,5 +169,5 @@ def ytplaylist_url(match):
     title = snippet['title']
     author = snippet['channelTitle']
     num_videos = int(content_details['itemCount'])
-    count_videos = ' - \x02{:,}\x02 video{}'.format(num_videos, "s"[num_videos == 1:])
-    return "\x02{}\x02 {} - \x02{}\x02".format(title, count_videos, author)
+    count_videos = '{:,} video{}'.format(num_videos, "s"[num_videos == 1:])
+    return "{} [div] {} [div] {}".format(title, count_videos, author)

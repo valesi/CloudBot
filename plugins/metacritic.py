@@ -108,6 +108,6 @@ def metacritic(text):
     except IndexError:
         score = None
 
-    return '[{}] {} - \x02{}/100\x02, {} - {}'.format(plat.upper(), name, score or 'no score',
-                                                      'release: \x02%s\x02' % release if release else 'unreleased',
-                                                      link)
+    return '[{}] {} [div] {}/100 [div] {} [div] {}'.format(plat.upper(), name, score or 'no score',
+                                                           'release: {}'.format(release if release else 'unreleased'),
+                                                           link)

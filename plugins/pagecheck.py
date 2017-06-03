@@ -8,7 +8,7 @@ from cloudbot import hook
 
 
 @hook.command("down", "offline", "up")
-def down(text):
+def down(bot, text):
     """<url> - checks if <url> is online or offline
     :type text: str
     """
@@ -16,14 +16,30 @@ def down(text):
     if "://" not in text:
         text = 'http://' + text
 
-    text = 'http://' + urllib.parse.urlparse(text).netloc
+    #text = 'http://' + urllib.parse.urlparse(text).netloc
+    up = False
 
     try:
-        requests.get(text)
-    except requests.exceptions.ConnectionError:
-        return '{} seems to be down'.format(text)
+        r = requests.get(text, headers={"user-agent":bot.user_agent}, timeout=10.0)
+        if r.status_code == requests.codes.ok:
+            up = True
+        else:
+            reason = r.status_code
+    except HTTPError:
+        reason = "HTTP error"
+    except ConnectionError:
+        reason = "connection error"
+    except SSLError as ex:
+        reason = "TLS error"
+    except TooManyRedirects:
+        reason = "too many redirects"
+    except Timeout:
+        reason = "timeout after 10s"
+
+    if up:
+        return text + " looks $(green)up$(c) from here"
     else:
-        return '{} seems to be up'.format(text)
+        return "{} looks $(red)down$(c) from here: {}".format(text, reason)
 
 
 @hook.command()
@@ -50,8 +66,8 @@ def isup(text):
     content = soup.find('div').text.strip()
 
     if "not just you" in content:
-        return "It's not just you. {} looks \x02\x034down\x02\x0f from here!".format(url)
+        return "It's not just you. {} looks $(red)down$(c)".format(url)
     elif "is up" in content:
-        return "It's just you. {} is \x02\x033up\x02\x0f.".format(url)
+        return "It's just you. {} is $(green)up$(c)".format(url)
     else:
         return "Huh? That doesn't look like a site on the interweb."

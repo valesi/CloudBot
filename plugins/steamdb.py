@@ -105,6 +105,6 @@ def steamcalc(text):
 
     data["short_url"] = web.try_shorten(data["url"])
 
-    return "\x02{name}\x02 has \x02{count:,}\x02 games with a total value of \x02{value}\x02" \
+    return "\x02{name}\x02 has \x02{count}\x02 games with a total value of \x02{value}\x02" \
            " (\x02{value_sales}\x02 during sales). \x02{count_unplayed:,}\x02" \
            " (\x02{percent_unplayed}%\x02) have never been played - {short_url}".format(**data)

@@ -36,9 +36,9 @@ def system(reply, message):
     sys_cpu_count = platform.machine()
 
     reply(
-        "OS: \x02{}\x02, "
-        "Python: \x02{} {}\x02, "
-        "Architecture: \x02{}\x02 (\x02{}\x02)"
+        "[h1]OS:[/h1] {} [div] "
+        "[h1]Python:[/h1] {} {} [div] "
+        "[h1]Architecture:[/h1] {} ({})"
         .format(
             sys_os,
             python_implementation,
@@ -57,10 +57,10 @@ def system(reply, message):
         uptime = timedelta(seconds=round(time.time() - process.create_time()))
 
         message(
-            "Uptime: \x02{}\x02, "
-            "Threads: \x02{}\x02, "
-            "CPU Usage: \x02{}\x02, "
-            "Memory Usage: \x02{}\x02"
+            "[h1]Uptime:[/h1] {} [div] "
+            "[h1]Threads:[/h1] {} [div] "
+            "[h1]CPU Usage:[/h1] {} [div] "
+            "[h1]Memory Usage:[/h1] {}"
             .format(
                 uptime,
                 thread_count,
@@ -73,5 +73,5 @@ def system(reply, message):
 def sauce():
     """Returns a link to the source"""
     return "Check out my source code! I am a fork of cloudbot: " \
-           "https://github.com/CloudBotIRC/CloudBot/ and my source is here: " \
-           "https://github.com/edwardslabs/CloudBot"
+           "https://github.com/edwardslabs/CloudBot/ and my source is here: " \
+           "https://github.com/valesi/CloudBot"
