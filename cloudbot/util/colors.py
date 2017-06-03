@@ -191,7 +191,8 @@ def parse(string):
     regex = THEME_RE.findall(string)
     formatted = string
     for match in regex:
-        formatted = formatted.replace("[{}]".format(match), theme[match], 1)
+        if match in theme:
+            formatted = formatted.replace("[{}]".format(match), theme[match], 1)
     regex = COLOR_RE.findall(formatted)
     for match in regex:
         formatted = formatted.replace(match, _convert(match), 1)
