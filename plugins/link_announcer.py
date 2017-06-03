@@ -5,7 +5,7 @@ from contextlib import closing
 from cloudbot import hook
 
 # This will match any URL except the patterns defined in blacklist.
-blacklist = '.*(reddit\.com|redd\.it|youtube\.com|youtu\.be|spotify\.com|twitter\.com|twitch\.tv|ama?zo?n\.(?:\w+(?:\.\w+)?)|xkcd\.com|steamcommunity\.com|steampowered\.com|newegg\.com|soundcloud\.com|speedtest\.net|vimeo\.com).*'
+blacklist_re = '.*(ebay\.(?:\w+(?:\.\w+)?)|reddit\.com|redd\.it|youtube\.com|youtu\.be|spotify\.com|twitter\.com|twitch\.tv|ama?zo?n\.(?:\w+(?:\.\w+)?)|xkcd\.com|steamcommunity\.com|steampowered\.com|newegg\.com|soundcloud\.com|speedtest\.net|vimeo\.com).*'
 url_re = re.compile('(?!{})http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+~]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'.format(blacklist), re.I)
 
 opt_out = []
@@ -58,7 +58,7 @@ def title_re(match, chan, conn):
     if chan in opt_out:
         return
     url = match.group()
-    if re.search(blacklist, url):
+    if re.search(blacklist_re, url):
         return
 
     return get_title(url)
