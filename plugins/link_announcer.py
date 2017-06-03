@@ -6,7 +6,7 @@ from cloudbot import hook
 
 # This will match any URL except the patterns defined in blacklist.
 blacklist_re = '.*(ebay\.(?:\w+(?:\.\w+)?)|reddit\.com|redd\.it|youtube\.com|youtu\.be|spotify\.com|twitter\.com|twitch\.tv|ama?zo?n\.(?:\w+(?:\.\w+)?)|xkcd\.com|steamcommunity\.com|steampowered\.com|newegg\.com|soundcloud\.com|speedtest\.net|vimeo\.com).*'
-url_re = re.compile('(?!{})http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+~]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'.format(blacklist), re.I)
+url_re = re.compile('(?!{})http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+~]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'.format(blacklist_re), re.I)
 
 opt_out = []
 
@@ -35,7 +35,7 @@ def bytesto(bytes, system = traditional):
     return str(amount) + suffix
 
 
-@hook.command("t", autohelp=False)
+@hook.command("title", "t", autohelp=False)
 def title(text, chan, conn):
     """[URL] - Gets the HTML title of [URL], or of the lastest URL in chat history"""
     url = None
