@@ -24,13 +24,13 @@ def issue(text):
         url = web.try_shorten(j['html_url'], service='git.io')
         number = j['number']
         title = j['title']
-        summary = formatting.truncate(j['body'].split('\n')[0], 25)
+        summary = formatting.truncate(j['body'].split('\n')[0], 200)
         if j['state'] == 'open':
             state = '$(green)Opened$(c) by {}'.format(j['user']['login'])
         else:
             state = '$(red)Closed$(c) by {}'.format(j['closed_by']['login'])
 
-        return 'Issue #{} ({}): {} [div] {}: {}'.format(number, state, url, title, summary)
+        return 'Issue #{} {} [div] {} [div] {} [div] [h3]{}[/h3]'.format(number, state, title, summary, url)
     else:
         r = requests.get('https://api.github.com/repos/{}/issues'.format(repo), timeout=10.0)
         j = r.json()
