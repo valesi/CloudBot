@@ -3,11 +3,23 @@ import requests
 from cloudbot import hook
 from cloudbot.util import web, formatting
 
+
+HEADERS = {
+    "Accept": "application/vnd.github.v3+json"
+}
+
 shortcuts = {
     'origin': 'valesi/CloudBot',
     'upstream': 'edwardslabs/CloudBot',
     'cloudbot': 'CloudBotIRC/CloudBot'
 }
+
+
+def get_data(url, headers=HEADERS):
+    try:
+        return (True, requests.get(url, headers=headers, timeout=10.0).json())
+    except Exception as ex:
+        return (False, "API Error: {}".format(ex))
 
 
 @hook.command("ghissue", "issue")
@@ -18,23 +30,24 @@ def issue(text):
     issue = args[1] if len(args) > 1 else None
 
     if issue:
-        r = requests.get('https://api.github.com/repos/{}/issues/{}'.format(repo, issue), timeout=10.0)
-        j = r.json()
+        ret, data = get_data('https://api.github.com/repos/{}/issues/{}'.format(repo, issue))
+        if not ret:
+            return data
 
-        url = web.try_shorten(j['html_url'], service='git.io')
-        number = j['number']
-        title = j['title']
-        summary = formatting.truncate(j['body'].split('\n')[0], 200)
-        if j['state'] == 'open':
-            state = '$(green)Opened$(c) by {}'.format(j['user']['login'])
+        url = web.try_shorten(data['html_url'], service='git.io')
+        number = data['number']
+        title = data['title']
+        summary = formatting.truncate(data['body'].split('\n')[0], 200)
+        if data['state'] == 'open':
+            state = '$(green)Opened$(c) by {}'.format(data['user']['login'])
         else:
-            state = '$(red)Closed$(c) by {}'.format(j['closed_by']['login'])
+            state = '$(red)Closed$(c) by {}'.format(data['closed_by']['login'])
 
         return 'Issue #{} {} [div] {} [div] {} [div] [h3]{}[/h3]'.format(number, state, title, summary, url)
     else:
-        r = requests.get('https://api.github.com/repos/{}/issues'.format(repo), timeout=10.0)
-        j = r.json()
+        ret, data = get_data('https://api.github.com/repos/{}/issues'.format(repo))
+        if not ret:
+            return data
 
-        count = len(j)
-        return '{} has {} open issues.'.format(repo, count if count else "no")
+        return '{} has {} open issues.'.format(repo, len(data) if data else "no")
 
