@@ -17,7 +17,7 @@ query_url = 'https://www.wolframalpha.com/input/?i={}'
 show_pods = {'Input': True, 'Result': True, 'UnitConversion': True, 'AdditionalConversion': True}
 
 
-#hook.on_start()
+@hook.on_start()
 def on_start(bot):
     global api_key
     api_key = bot.config.get("api_keys", {}).get("wolframalpha", None)
@@ -75,7 +75,7 @@ def wolframalpha(text, message):
                     # Add
                     values.append(item.strip())
                 # Put 'em back together
-                subinfo = sep.join(values)
+                subinfo = " [div] ".join(values)
                 if subinfo:
                     podresults.append(subinfo)
 
@@ -84,7 +84,7 @@ def wolframalpha(text, message):
 
 
         if results:
-            info = sep.join(results)
+            info = " [div] ".join(results)
             if pid == "Input":
                 # Strip verbose "Input interp/info"
                 title = title.replace(" interpretation", "").replace(" information", "")
@@ -105,7 +105,7 @@ def wolframalpha(text, message):
 
     # get the URL for a user to view this query in a browser
     try:
-        short_url = "[div] [h1]Web[/h1] " + web.shorten(url)
+        short_url = " [div] [h1]Web[/h1] " + web.shorten(url)
     except:
         short_url = None
     if short_url:
