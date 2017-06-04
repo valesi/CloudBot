@@ -78,6 +78,11 @@ def expand(url, service=None):
         if impl is None:
             impl = Shortener()
 
+    try:
+        return impl.expand(url)
+    except:
+        impl = Shortener()
+
     return impl.expand(url)
 
 
@@ -114,7 +119,7 @@ class Shortener:
         if 'location' in r.headers:
             return r.headers['location']
         else:
-            raise ServiceError('That URL does not exist', r)
+            raise ServiceError('That URL does not redirect.', r)
 
 
 class Pastebin:
@@ -148,7 +153,7 @@ def _pastebin(name):
 class Isgd(Shortener):
     def shorten(self, url, custom=None, key=None):
         p = {'url': url, 'shorturl': custom, 'format': 'json'}
-        r = requests.get('http://is.gd/create.php', params=p)
+        r = requests.get('https://is.gd/create.php', params=p)
         j = r.json()
 
         if 'shorturl' in j:
@@ -158,7 +163,7 @@ class Isgd(Shortener):
 
     def expand(self, url):
         p = {'shorturl': url, 'format': 'json'}
-        r = requests.get('http://is.gd/forward.php', params=p)
+        r = requests.get('https://is.gd/forward.php', params=p)
         j = r.json()
 
         if 'url' in j:
@@ -181,8 +186,8 @@ class Googl(Shortener):
         else:
             raise ServiceError(j['error']['message'], r)
 
-    def expand(self, url):
-        p = {'shortUrl': url}
+    def expand(self, url, key=None):
+        p = {'shortUrl': url, 'key': key}
         r = requests.get('https://www.googleapis.com/urlshortener/v1/url', params=p)
         j = r.json()
 
@@ -196,7 +201,7 @@ class Googl(Shortener):
 class Gitio(Shortener):
     def shorten(self, url, custom=None, key=None):
         p = {'url': url, 'code': custom}
-        r = requests.post('http://git.io', data=p)
+        r = requests.post('https://git.io', data=p)
 
         if r.status_code == requests.codes.created:
             s = r.headers['location']
@@ -218,6 +223,7 @@ class Hastebin(Pastebin):
             return '{}/{}.{}'.format(HASTEBIN_SERVER, j['key'], ext)
         else:
             raise ServiceError(j['message'], r)
+
 
 @_pastebin('snoonet')
 class SnoonetPaste(Pastebin):

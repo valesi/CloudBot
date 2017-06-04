@@ -15,7 +15,7 @@ def shorten(text):
         return e.message
 
 
-@hook.command
+@hook.command("expand", "location")
 def expand(text):
     """<url> - unshortens <url>"""
     args = text.split()
