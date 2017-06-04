@@ -102,13 +102,13 @@ def check_solicit_index(conn_name, chan, text):
 
 
 @hook.command("get", autohelp=False)
-def solicit(bot, conn, text, chan, nick, user):
+def solicit(bot, conn, text, chan, nick, user, host, mask):
     """[index] - Gets suppressed event at count [index] from most recent 0, defaulting to last"""
     if text:
         ret, value = check_solicit_index(conn.name, chan, text)
         if ret is None:
             # Run a new event directly with the force flag
-            e = event.Event(bot=bot, conn=conn, content=text, event_type=event.EventType.message, channel=chan, nick=nick, user=user, force=True)
+            e = event.Event(bot=bot, conn=conn, content=text, event_type=event.EventType.message, channel=chan, nick=nick, user=user, host=host, mask=mask, force=True)
             asyncio.async(bot.process(e), loop=bot.loop)
 
 
