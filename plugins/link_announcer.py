@@ -40,10 +40,7 @@ def title(text, chan, conn):
     """[URL] - Gets the HTML title of [URL], or of the lastest URL in chat history"""
     url = None
     if text:
-        match = url_re.search(text)
-        if not match:
-            return
-        url = match.group()
+        url = text
     else:
         for line in conn.history[chan].__reversed__():
             match = url_re.search(line[2])
@@ -82,5 +79,5 @@ def get_title(url):
             html = BeautifulSoup(content)
             r.close()
             return " ".join(html.title.text.strip().splitlines())
-    except ReadTimeout as ex:
-        return "Error: Connection timeout"
+    except Exception as ex:
+        return "Error: {}".format(ex)
