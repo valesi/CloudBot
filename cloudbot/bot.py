@@ -258,25 +258,28 @@ class CloudBot:
                     command = inline_cmd_match.group(1).lower()
                     cmd_text = inline_cmd_match.group(2).strip()
 
+                command_hook = None
                 if command in self.plugin_manager.commands:
                     command_hook = self.plugin_manager.commands[command]
+                else:
+                    potential_matches = []
+                    potential_functions = []
+                    for potential_match, hook in self.plugin_manager.commands.items():
+                        if potential_match.startswith(command):
+                            potential_matches.append((potential_match, hook))
+                            # Aliases for same command
+                            if (hook.plugin.title, hook.function_name) not in potential_functions:
+                                potential_functions.append((hook.plugin.title, hook.function_name))
+                    if potential_matches:
+                        if len(potential_functions) == 1 or len(potential_matches) == 1:
+                            command_hook = potential_matches[0][1]
+                        else:
+                            event.notice("Possible matches: {}".format(
+                                formatting.get_text_list([command for command, hook in potential_matches])))
+                if command_hook:
                     command_event = CommandEvent(hook=command_hook, text=cmd_text,
                                              triggered_command=command, base_event=event)
                     tasks.append(self.plugin_manager.launch(command_hook, command_event))
-                else:
-                    potential_matches = []
-                    for potential_match, plugin in self.plugin_manager.commands.items():
-                        if potential_match.startswith(command):
-                            potential_matches.append((potential_match, plugin))
-                    if potential_matches:
-                        if len(potential_matches) == 1:
-                            command_hook = potential_matches[0][1]
-                            command_event = CommandEvent(hook=command_hook, text=cmd_text,
-                                                     triggered_command=command, base_event=event)
-                            tasks.append(self.plugin_manager.launch(command_hook, command_event))
-                        else:
-                            event.notice("Possible matches: {}".format(
-                                formatting.get_text_list([command for command, plugin in potential_matches])))
 
             # Regex hooks
             for regex, regex_hook in self.plugin_manager.regex_hooks:
