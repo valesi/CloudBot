@@ -50,9 +50,9 @@ def twitter_url(match):
 
     prefix = "\u2713" if user.verified else ""
 
-    time = timeformat.time_since(tweet.created_at, datetime.utcnow())
+    time = timeformat.time_since(tweet.created_at, datetime.utcnow(), simple=True)
 
-    return "{}@\x02{}\x02 ({}): {} ({} ago)".format(prefix, user.screen_name, user.name, text, time)
+    return "{}@\x02{}\x02 ({}) {} ago: {}".format(prefix, user.screen_name, user.name, time, text)
 
 
 @hook.command("twitter", "tw", "twatter")
@@ -133,9 +133,9 @@ def twitter(text):
     else:
         prefix = ""
 
-    time = timeformat.time_since(tweet.created_at, datetime.utcnow())
+    time = timeformat.time_since(tweet.created_at, datetime.utcnow(), simple=True)
 
-    return "{}@\x02{}\x02 ({}): {} ({} ago)".format(prefix, user.screen_name, user.name, text, time)
+    return "{}@\x02{}\x02 ({}) {} ago: {}".format(prefix, user.screen_name, user.name, time, text)
 
 
 @hook.command("twuser", "twinfo")
