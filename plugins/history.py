@@ -70,7 +70,7 @@ def chat_tracker(event, db, conn):
 
 
 @asyncio.coroutine
-@hook.command(autohelp=False)
+@hook.command(autohelp=False, permissions=["botcontrol"])
 def resethistory(event, conn):
     """- resets chat history for the current channel
     :type event: cloudbot.event.Event
