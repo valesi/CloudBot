@@ -54,7 +54,7 @@ def title(text, chan, conn):
 
 
 @hook.regex(url_re)
-def title_re(match, chan, conn):
+def title_re(bot, match, chan, conn):
     if chan in opt_out:
         return
     url = match.group()

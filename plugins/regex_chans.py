@@ -119,17 +119,25 @@ def sieve_regex(bot, event, _hook):
     if _hook.type == "regex" and event.chan.startswith("#"):
         if _hook.plugin.title not in plugin_whitelist:
             if event.force:
-                bot.logger.info("Force run regex: {}".format(event.match.group()))
+                bot.logger.info("Force run {}: {}".format(_hook.function_name, event.match.group()))
                 return event
+            allow = True
             status = status_cache.get((event.conn.name, event.chan))
             if status != "ENABLED" and (status == "DISABLED" or not default_enabled):
                 # Allow sed/correction with command prefix
                 if _hook.plugin.title == "correction":
                     return event if event.match.group().startswith(prefix) else None
+                allow = False
+            # Global disable of link_announce from config. TODO: Connection (maybe chan someday) config overrides global
+            elif _hook.plugin.title == "link_announcer" and bot.config.get("disable_link_announce"):
+                allow = False
+
+            if allow:
+                bot.logger.info("[{}] Allowing {} to {}".format(event.conn.name, _hook.function_name, event.chan))
+            else:
                 bot.logger.info("[{}] Denying {} from {}. Storing in queue.".format(event.conn.name, _hook.function_name, event.chan))
                 store_event(event)
                 return
-            bot.logger.info("[{}] Allowing {} to {}".format(event.conn.name, _hook.function_name, event.chan))
     elif _hook.type == "command" and _hook.function_name == "solicit":
         # Don't allow recursive .get .get .get ...
         if event.text.startswith(prefix + event.triggered_command):
