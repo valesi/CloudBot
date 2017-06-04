@@ -140,7 +140,7 @@ def sieve_regex(bot, event, _hook):
                 return
     elif _hook.type == "command" and _hook.function_name == "solicit":
         # Don't allow recursive .get .get .get ...
-        if event.text[0] in prefix and event.text[1:].startswith(event.triggered_command):
+        if event.text and event.text[0] in prefix and event.text[1:].startswith(event.triggered_command):
             return
         # TODO get last regex of user if text is user?
         ret, value = check_solicit_index(event.conn.name, event.chan, event.text)
