@@ -126,7 +126,7 @@ def sieve_regex(bot, event, _hook):
             if status != "ENABLED" and (status == "DISABLED" or not default_enabled):
                 # Allow sed/correction with command prefix
                 if _hook.plugin.title == "correction":
-                    return event if event.match.group().startswith(prefix) else None
+                    return event if event.match.group()[0] in prefix else None
                 allow = False
             # Global disable of link_announce from config. TODO: Connection (maybe chan someday) config overrides global
             elif _hook.plugin.title == "link_announcer" and bot.config.get("disable_link_announce"):
