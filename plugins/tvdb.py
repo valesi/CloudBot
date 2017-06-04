@@ -1,5 +1,6 @@
 import datetime
 import requests
+from collections import deque
 from lxml import etree
 
 from cloudbot import hook
@@ -9,6 +10,7 @@ from cloudbot import hook
 parser = etree.XMLParser(resolve_entities=False, no_network=True)
 
 API_URL = "https://thetvdb.com/api/"
+SITE_URL = "https://thetvdb.com/"
 
 
 @hook.on_start()
@@ -45,6 +47,9 @@ def get_series_from_name(text):
 
     return res
 
+
+def get_seasons_for_series(series_id):
+    pass
 
 
 def get_episodes_for_series(series_id):
@@ -90,6 +95,10 @@ def get_episode_info(episode):
     return first_aired, air_date, episode_desc
 
 
+def get_site_url(series_id, season_id=None, episode_id=None):
+    return ""
+
+
 @hook.command("tv", "tvdb")
 def tvdb(text):
     """<series> -- Show next/previous episodes of <series>."""
@@ -110,11 +119,10 @@ def tvdb(text):
     status = data["status"]
     episodes = data["episodes"]
 
-    next_eps = []
+    future_ep = []
+    today_eps = deque([], 2)
+    prev_ep = []
     today = datetime.datetime.utcnow().date()
-
-    # Don't show status if there's a future episode
-    future = False
 
     for episode in reversed(episodes):
         ep_info = get_episode_info(episode)
@@ -125,22 +133,33 @@ def tvdb(text):
         (first_aired, air_date, episode_desc) = ep_info
 
         if air_date > today:
-            future = True
-            next_eps = ["[h1]Next:[/h1] {} [h3]({})[/h3]".format(episode_desc, first_aired)]
+            future_ep = ["[h1]Next:[/h1] {} [h3]({})[/h3]".format(episode_desc, first_aired)]
         elif air_date == today:
-            next_eps.append("[h1]Today:[/h1] {}".format(episode_desc))
+            today_eps.appendleft("[h1]Today:[/h1] {}".format(episode_desc))
         else:
-            next_eps.append("[h1]Previous:[/h1] {} [h3]({})[/h3]".format(episode_desc, first_aired))
+            prev_ep = ["[h1]Previous:[/h1] {} [h3]({})[/h3]".format(episode_desc, first_aired)]
             # we're iterating in reverse order with newest episodes last
             # so, as soon as we're past today, break out of loop
             break
 
-    episodes = " [div] ".join(next_eps)
+    # Remove future episode if we have 2 episodes today (list first 2)
+    # Ideally we would know airing time, but TVDB doesn't do that
+    if len(today_eps) >= 2:
+        future_ep = []
 
-    if not future:
+    episodes = " [div] ".join(list(today_eps) + future_ep + prev_ep)
+
+    out = [series_name]
+
+    if not future_ep:
         if status == "Continuing":
             status = "Ongoing"
-        episodes = "{} [div] {}".format(status, episodes)
+        out.append(status)
 
-    return "{} [div] {}".format(series_name, episodes)
+    if episodes:
+        out.append(episodes)
+    #else:
+    #    out.append(get_site_url(data["series_id"]))
+
+    return " [div] ".join(out)
 
