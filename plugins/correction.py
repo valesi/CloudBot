@@ -17,6 +17,8 @@ def correction(match, conn, nick, chan, message):
     groups = [b.replace("\/", "/") for b in re.split(r"(?<!\\)/", match.groups()[1])]
     find = groups[0]
     replace = groups[1]
+    if not find:
+        return "Get outta here"
     if find == replace:
         return "really dude? you want me to replace {} with {}?".format(find, replace)
 
