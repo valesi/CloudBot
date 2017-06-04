@@ -5,35 +5,31 @@ from cloudbot import hook
 @hook.command(autohelp=False)
 def cats():
     """gets a fucking fact about cats."""
+    try:
+        r = requests.get('https://catfacts-api.appspot.com/api/facts?number=1', timeout=10.0)
+        j = r.json()
+    except:
+        return "there was an error finding a cat fact for you."
+    return j.get('facts')
 
-    attempts = 0
-    while True:
-        try:
-            r = requests.get(
-                'http://catfacts-api.appspot.com/api/facts?number=1')
-        except:
-            if attempts > 2:
-                return "There was an error contacting the API."
-            else:
-                attempts += 1
-                continue
-        json = r.json()
-        response = json['facts']
-        return response
 
 @hook.command(autohelp=False)
 def catgifs():
     """gets a fucking cat gif."""
-    attempts = 0
-    while True:
-        try:
-            r = requests.get("http://marume.herokuapp.com/random.gif")
+    params = { "type": "gif" }
+    try:
+        r = requests.get("http://thecatapi.com/api/images/get", params=params, timeout=10.0)
+    except:
+        return "there was an error finding a cat gif for you."
+    return "OMG A CAT GIF: {}".format(r.url)
 
-        except:
-            if attempts > 2:
-                return "there was an error finding a cat gif for you."
-            else:
-                attempts += 1
-                continue
-        response = r.url
-        return "OMG A CAT GIF: {}".format(response)
+
+@hook.command(autohelp=False)
+def catpic():
+    """gets a fucking cat pic."""
+    params = { "type": "jpg,png" }
+    try:
+        r = requests.get("http://thecatapi.com/api/images/get", params=params, timeout=10.0)
+    except:
+        return "there was an error finding a cat pic for you."
+    return "Kitty! {}".format(r.url)
