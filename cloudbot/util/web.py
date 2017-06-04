@@ -66,23 +66,22 @@ def try_shorten(url, custom=None, key=None, service=DEFAULT_SHORTENER):
 
 
 def expand(url, service=None):
+    impl = None
     if service:
         impl = shorteners[service]
     else:
-        impl = None
         for name in shorteners:
             if name in url:
                 impl = shorteners[name]
                 break
 
-        if impl is None:
-            impl = Shortener()
+    if impl:
+        try:
+            return impl.expand(url)
+        except:
+            pass
 
-    try:
-        return impl.expand(url)
-    except:
-        impl = Shortener()
-
+    impl = Shortener()
     return impl.expand(url)
 
 
