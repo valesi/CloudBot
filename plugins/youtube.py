@@ -63,11 +63,11 @@ def get_video_description(video_id, show_url=False):
 
     if statistics.get('viewCount'):
         views = int(statistics.get('viewCount'))
-        out += u' [div] {:,} $(blue)\U0001f441$(c)'.format(views)
+        out += u' [div] {:,} views'.format(views)  # Eye \U0001f441
 
     if statistics.get('likeCount'):
-        likes = u'{:,} $(green)\U0001F44D$(c)'.format(int(statistics.get('likeCount')))
-        dislikes = u'{:,} $(red)\U0001F44E$(c)'.format(int(statistics.get('dislikeCount')))
+        likes = u'{:,} $(green)\u25b2$(c)'.format(int(statistics.get('likeCount')))  # Thumbs up: \U0001F44D
+        dislikes = u'{:,} $(red)\u25bc$(c)'.format(int(statistics.get('dislikeCount')))  # Down: \U0001F44E
         out += ' [div] {} {}'.format(likes, dislikes)
 
     return out
