@@ -6,14 +6,14 @@ from cloudbot import hook
 from cloudbot.util import formatting
 
 
-base_url = 'http://api.urbandictionary.com/v0'
+base_url = "https://api.urbandictionary.com/v0"
 define_url = base_url + "/define"
 random_url = base_url + "/random"
 
 
-@hook.command("urban", "u", autohelp=False)
+@hook.command("urban", "u", "ud", autohelp=False)
 def urban(text):
-    """urban <phrase> [id] -- Looks up <phrase> on urbandictionary.com."""
+    """<phrase> [id] -- Looks up <phrase> on the Urban Dictionary"""
 
     headers = {
         "Referer": "http://m.urbandictionary.com"
@@ -21,7 +21,6 @@ def urban(text):
 
     if text:
         # clean and split the input
-        text = text.lower().strip()
         parts = text.split()
 
         # if the last word is a number, set the ID to that number
@@ -63,23 +62,21 @@ def urban(text):
         try:
             definition = definitions[id_num - 1]
 
-            def_text = " ".join(definition['definition'].split())  # remove excess spaces
-            def_text = formatting.truncate(def_text, 200)
         except IndexError:
             return 'Not found.'
 
         url = definition['permalink']
 
-        output = "[{}/{}] {} - {}".format(id_num, len(definitions), def_text, url)
+        output = "[h3]({}/{})[/h3]".format(id_num, len(definitions))
 
     else:
         definition = random.choice(definitions)
 
-        def_text = " ".join(definition['definition'].split())  # remove excess spaces
-        def_text = formatting.truncate(def_text, 200)
-
         name = definition['word']
         url = definition['permalink']
-        output = "\x02{}\x02: {} - {}".format(name, def_text, url)
+        output = "[h1]{}:[/h1]".format(name)
 
-    return output
+    def_text = " ".join(definition['definition'].split())  # remove excess spaces
+    def_text = formatting.truncate(def_text, 300)
+
+    return "{} {} [div] [h3]{}[/h3]".format(output, def_text, url)
