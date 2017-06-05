@@ -1,34 +1,56 @@
 """
 whois.py
-Provides a command to allow users to look up information on domain names.
+Provides a command to allow users to look up information on domain names using jsonwhoisapi.com.
+https://jsonwhoisapi.com/docs/
 """
-
-import pythonwhois
-from contextlib import suppress
+import requests
+from datetime import datetime
+from requests.auth import HTTPBasicAuth
 
 from cloudbot import hook
+
+
+API_URL = "https://jsonwhoisapi.com/api/v1/whois"
+
+
+@hook.on_start()
+def load_key(bot):
+    global account_id, api_key
+    account_id = bot.config.get("api_keys", {}).get("jsonwhoisapi_id")
+    api_key = bot.config.get("api_keys", {}).get("jsonwhoisapi_key")
 
 
 @hook.command
 def whois(text):
     """<domain> -- Does a whois query on <domain>."""
-    domain = text.lower()
+    if not account_id or not api_key:
+        return "No jsonwhoisapi.com API user/key."
+
+    params = {"identifier": text.lower()}
+
+    auth = HTTPBasicAuth(account_id, api_key)
 
     try:
-        data = pythonwhois.get_whois(domain, normalized=True)
-    except pythonwhois.shared.WhoisException:
-        return "Invalid input."
+        req = requests.get(API_URL, params=params, auth=auth, timeout=10.0)
+    except Exception as ex:
+        return "Error: {}".format(ex)
+
+    if not req.ok:
+        return "Error: HTTP {}".format(req.status_code)
+
+    data = req.json()
+
     info = []
+    info.append(data["name"])
+    info.append("Reg'd" if data["registered"] else "Unreg'd")
 
-    # We suppress errors here because different domains provide different data fields
-    with suppress(KeyError):
-        info.append("[h1]Registrar:[/h1] {}".format(data["registrar"][0]))
+    # Remove extra spaces....
+    info.append("[h1]Registrar:[/h1] {}".format(data["registrar"]["name"]))
 
-    with suppress(KeyError):
-        info.append("[h1]Registered:[/h1] {}".format(data["creation_date"][0].strftime("%Y-%m-%d")))
+    ts = lambda l, s: "[h1]{}:[/h1] {}".format(l, s[:10] if s else "Unknown")
 
-    with suppress(KeyError):
-        info.append("[h1]Expires:[/h1] {}".format(data["expiration_date"][0].strftime("%Y-%m-%d")))
+    info.append(ts("Created", data["created"]))
+    info.append(ts("Changed", data["changed"]))
+    info.append(ts("Expires", data["expires"]))
 
-    info_text = " [div] ".join(info)
-    return "{} [div] {}".format(domain, info_text)
+    return " [div] ".join(info)
