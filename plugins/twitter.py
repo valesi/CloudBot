@@ -7,7 +7,9 @@ from cloudbot import hook
 
 from cloudbot.util import timeformat
 
+
 TWITTER_RE = re.compile(r"(?:(?:www.twitter.com|twitter.com)/(?:[-_a-zA-Z0-9]+)/status/)([0-9]+)", re.I)
+TCO_RE = re.compile(r"https?://t\.co/\w+", re.I)
 
 
 @hook.on_start()
@@ -30,6 +32,43 @@ def load_api(bot):
         tw_api = tweepy.API(auth)
 
 
+def format_tweet(tweet):
+    user = tweet.user
+
+    # Format the return the text of the tweet
+    text = " ".join(tweet.text.split())
+
+    urls = {}
+    if tweet.entities.get("urls"):
+        for item in tweet.entities["urls"]:
+            urls[item["url"]] = item["expanded_url"]
+
+    if "extended_entities" in tweet._json:
+        for item in tweet._json["extended_entities"]["media"]:
+            # check for video, use mp4
+            if "video_info" in item:
+                urls[item["url"]] = item["video_info"]["variants"][0]["url"]
+                continue
+            urls[item["url"]] = item["media_url_https"]
+
+    # First link seems to be the media element
+    while True:
+        m = TCO_RE.search(text)
+        if not m:
+            break
+        if m.group() not in urls:
+            # This is the t.co url for the tweet. remove this
+            text = TCO_RE.sub("", text, count=1)
+            continue
+        text = TCO_RE.sub(urls[m.group()], text, count=1)
+
+    verified = "\u2713" if user.verified else ""
+
+    time = timeformat.time_since(tweet.created_at, datetime.utcnow(), simple=True)
+
+    return "{} ({}@{}) [div] {} ago [div] {}".format(user.name, verified, user.screen_name, time, text.strip())
+
+
 @hook.regex(TWITTER_RE)
 def twitter_url(match):
     # Find the tweet ID from the URL
@@ -41,18 +80,10 @@ def twitter_url(match):
 
     try:
         tweet = tw_api.get_status(tweet_id)
-        user = tweet.user
     except tweepy.error.TweepError:
         return
 
-    # Format the return the text of the tweet
-    text = " ".join(tweet.text.split())
-
-    prefix = "\u2713" if user.verified else ""
-
-    time = timeformat.time_since(tweet.created_at, datetime.utcnow(), simple=True)
-
-    return "{}@\x02{}\x02 ({}) {} ago: {}".format(prefix, user.screen_name, user.name, time, text)
+    return format_tweet(tweet)
 
 
 @hook.command("twitter", "tw", "twatter")
@@ -73,8 +104,6 @@ def twitter(text):
                 return "Could not find tweet."
             else:
                 return "Error: {}".format(e.reason)
-
-        user = tweet.user
 
     elif re.match(r'^\w{1,15}$', text) or re.match(r'^\w{1,15}\s+\d+$', text):
         # user is getting a tweet by name
@@ -103,14 +132,14 @@ def twitter(text):
 
         # if the timeline is empty, return an error
         if not user_timeline:
-            return "\x02{}\x02 has no tweets.".format(user.screen_name)
+            return "@{} has no tweets.".format(user.screen_name)
 
         # grab the newest tweet from the users timeline
         try:
             tweet = user_timeline[tweet_number]
         except IndexError:
             tweet_count = len(user_timeline)
-            return "\x02{}\x02 only has \x02{}\x02 tweets.".format(user.screen_name, tweet_count)
+            return "@{} only has {} tweets.".format(user.screen_name, tweet_count)
 
     elif re.match(r'^#\w+$', text):
         # user is searching by hashtag
@@ -120,22 +149,11 @@ def twitter(text):
             return "No tweets found."
 
         tweet = random.choice(search)
-        user = tweet.user
     else:
         # ???
         return "Invalid Input"
 
-    # Format the return the text of the tweet
-    text = " ".join(tweet.text.split())
-
-    if user.verified:
-        prefix = "\u2713"
-    else:
-        prefix = ""
-
-    time = timeformat.time_since(tweet.created_at, datetime.utcnow(), simple=True)
-
-    return "{}@\x02{}\x02 ({}) {} ago: {}".format(prefix, user.screen_name, user.name, time, text)
+    return format_tweet(tweet)
 
 
 @hook.command("twuser", "twinfo")
@@ -155,10 +173,19 @@ def twuser(text):
             return "Error: {}".format(e.reason)
 
     
-    prefix = "\u2713" if user.verified else ""
-    loc_str = " is located in \x02{}\x02 and".format(user.location) if user.location else ""
-    desc_str = " The users description is \"{}\"".format(user.description) if user.description else ""
+    verified = "\u2713" if user.verified else ""
 
-    return "{}@\x02{}\x02 ({}){} has \x02{:,}\x02 tweets and \x02{:,}\x02 followers.{}" \
-           "".format(prefix, user.screen_name, user.name, loc_str, user.statuses_count, user.followers_count,
-                     desc_str)
+    tf = lambda l, s: "[h1]{}:[/h1] {}".format(l, s)
+
+    out = []
+    if user.location:
+        out.append(tf("Loc", user.location))
+    if user.description:
+        out.append(tf("Desc", user.description))
+    if user.url:
+        out.append(tf("URL", user.url))
+    out.append(tf("Tweets", user.statuses_count))
+    out.append(tf("Followers", user.followers_count))
+
+    return "{}@{} ({}) [div] {}".format(verified, user.screen_name, user.name, " [div] ".join(out))
+
