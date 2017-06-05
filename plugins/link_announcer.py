@@ -6,7 +6,8 @@ from cloudbot import hook
 
 # This will match any URL except the patterns defined in blacklist.
 blacklist_re = '.*(ebay\.(?:\w+(?:\.\w+)?)|reddit\.com|redd\.it|youtube\.com|youtu\.be|spotify\.com|twitter\.com|twitch\.tv|ama?zo?n\.(?:\w+(?:\.\w+)?)|xkcd\.com|steamcommunity\.com|steampowered\.com|newegg\.com|soundcloud\.com|speedtest\.net|thetvdb\.com|vimeo\.com|wikipedia\.org).*'
-url_re = re.compile('(?!{})http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+~]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'.format(blacklist_re), re.I)
+url_re = re.compile('(?!{})https?://[^\s/$.?#].[^\s]*'.format(blacklist_re), re.I)
+direct_re = re.compile('https?://[^\s/$.?#].[^\s]*')
 
 opt_out = []
 
@@ -43,7 +44,7 @@ def title(text, chan, conn):
         url = text
     else:
         for line in conn.history[chan].__reversed__():
-            match = url_re.search(line[2])
+            match = direct_re.search(line[2])
             if match:
                 url = match.group()
                 break
