@@ -33,44 +33,44 @@ def get_video_description(video_id, show_url=False):
     statistics = data[0]['statistics']
     content_details = data[0]['contentDetails']
 
-    out = '[h1]YT:[/h1]'
+    start = '[h1]YT:[/h1] '
+    out = []
 
     if show_url:
-        out += ' [h3]https://youtu.be/{}[/h3] [div]'.format(video_id)
+        out.append('[h3]https://youtu.be/{}[/h3]'.format(video_id))
 
-    out += ' {}'.format(snippet['title'])
+    out.append(snippet['title'])
 
     if 'duration' not in content_details:
-        return out
+        return start + ' [div] '.join(out)
 
     if 'contentRating' in content_details:
-        out += ' [div] $(red)NSFW$(c)'
+        out.append('$(red)NSFW$(c)')
 
-    uploader = snippet['channelTitle']
-    out += ' [div] {}'.format(uploader)
+    out.append(snippet['channelTitle'])
 
     length = isodate.parse_duration(content_details.get('duration'))
-    out += ' [div] {}'.format(timeformat.format_time(int(length.total_seconds()), simple=True))
+    out.append(timeformat.format_time(int(length.total_seconds()), simple=True))
 
     upload_time = time.strptime(snippet.get('publishedAt'), "%Y-%m-%dT%H:%M:%S.000Z")
-    out += ' [div] {}'.format(time.strftime("%Y-%m-%d", upload_time))
+    out.append(time.strftime("%Y-%m-%d", upload_time))
 
     # Some videos/channels don't give this info??
     if 'statistics' in data[0]:
         statistics = data[0]['statistics']
     else:
-        return out
+        return start + ' [div] '.join(out)
 
     if statistics.get('viewCount'):
         views = int(statistics.get('viewCount'))
-        out += u' [div] {:,} views'.format(views)  # Eye \U0001f441
+        out.append(u'{:,} views'.format(views))  # Eye \U0001f441
 
     if statistics.get('likeCount'):
         likes = u'{:,} $(green)\u25b2$(c)'.format(int(statistics.get('likeCount')))  # Thumbs up: \U0001F44D
         dislikes = u'{:,} $(red)\u25bc$(c)'.format(int(statistics.get('dislikeCount')))  # Down: \U0001F44E
-        out += ' [div] {} {}'.format(likes, dislikes)
+        out.append('{} {}'.format(likes, dislikes))
 
-    return out
+    return start + ' [div] '.join(out)
 
 
 @hook.on_start()
