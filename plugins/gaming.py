@@ -117,10 +117,9 @@ def choose(text, notice):
     choices = re.findall(r'([^,]+)', text)
     if len(choices) == 1:
         choices = choices[0].split(' or ')
-        if len(choices) == 1:
-            notice(choose.__doc__)
-            return
-    return random.choice(choices)
+    if len(choices) <= 1:
+        return "Try giving a list..."
+    return random.choice(choices).strip()
 
 
 @asyncio.coroutine
