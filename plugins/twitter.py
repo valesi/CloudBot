@@ -58,12 +58,18 @@ def format_tweet(tweet):
             urls[item["url"]] = item["expanded_url"]
 
     if "extended_entities" in tweet._json:
+        high_bitrate = 0
         for item in tweet._json["extended_entities"]["media"]:
             # check for video
             if "video_info" in item:
-                urls[item["url"]] = item["video_info"]["variants"][0]["url"]
-                continue
-            urls[item["url"]] = item["media_url_https"]
+                for vid in item["video_info"]["variants"]:
+                    if vid["content_type"] == "video/mp4" and vid["bitrate"] > high_bitrate:
+                        high_bitrate = vid["bitrate"]
+                        urls[item["url"]] = vid["url"]
+                        continue
+            # Did we already set it?
+            if not item["url"] in urls:
+                urls[item["url"]] = item["media_url_https"]
 
     while True:
         m = TCO_RE.search(text)
