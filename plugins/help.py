@@ -17,7 +17,7 @@ def help_command(text, chan, conn, bot, notice, message, has_permission):
     """
     if text:
         searching_for = text.lower().strip()
-        if not re.match(r'^\w+$', searching_for):
+        if not re.match(r'\w+$', searching_for):
             notice("Invalid command name '{}'".format(text))
             return
     else:
@@ -27,7 +27,7 @@ def help_command(text, chan, conn, bot, notice, message, has_permission):
         if searching_for in bot.plugin_manager.commands:
             doc = bot.plugin_manager.commands[searching_for].doc
             if doc:
-                if doc.split()[0].isalpha():
+                if doc.split()[0] in searching_for:
                     # this is using the old format of `name <args> - doc`
                     message = "{}{}".format(conn.config["command_prefix"][0], doc)
                 else:
