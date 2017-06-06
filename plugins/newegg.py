@@ -29,7 +29,7 @@ NEWEGG_RE = re.compile(r"(?:(?:www\.newegg\.(com|ca))(?:/global/(?:\w+))?/Produc
 
 # newegg thinks it's so damn smart blocking my scraper
 HEADERS = {
-    'User-Agent': 'Newegg Android App / 4.5.0',
+    'User-Agent': 'Newegg Android App / 4.7.2',
     'Referer': 'http://www.newegg.com/'
 }
 
@@ -42,42 +42,40 @@ def format_item(tld, item, show_url=True):
     """ takes a newegg API item object and returns a description """
     additional = item['Additional']
     item = item['Basic']
-    title = formatting.truncate(item["Title"], 160)
 
-    # format the rating nicely if it exists
-    if item["ReviewSummary"]["TotalReviews"] == "[]":
-        rating = "No Ratings"
-    else:
-        rating = "{}/5 ({} ratings)".format(item["ReviewSummary"]["Rating"], item["ReviewSummary"]["TotalReviews"][1:-1])
+    start = "[h1]Newegg:[/h1] {} [div] ".format(formatting.truncate(item["Title"], 160))
 
-    if item["FinalPrice"] == item["OriginalPrice"]:
+    out = []
+
+    if item["FinalPrice"] == item["OriginalPrice"] or not item["OriginalPrice"]:
         price = "$(b){}$(b)".format(item["FinalPrice"])
     else:
         price = "$(b){FinalPrice}$(b), was {OriginalPrice}".format(**item)
-    price = "{}{}".format(CURRENCY[tld], price)
+    out.append("{}{}".format(CURRENCY[tld], price))
+
+    # format the rating nicely if it exists
+    if item["ReviewSummary"]["TotalReviews"]:
+        out.append("{}/5 ({} ratings)".format(item["ReviewSummary"]["Rating"], item["ReviewSummary"]["TotalReviews"]))
 
     tags = []
 
     if not item["Instock"]:
         tags.append("$(red)Out Of Stock$(c)")
-
     if item["IsFreeShipping"]:
         tags.append("Free Shipping")
-
     if item.get("IsPremierItem"):
         tags.append("Premier")
-
     if item["IsFeaturedItem"]:
         tags.append("Featured")
-
     if additional["IsShellShockerItem"]:
         tags.append("$(b)SHELL SHOCKER$(b)")
+    if tags:
+        out.append(", ".join(tags))
 
-    # join all the tags together in a comma separated string ("tag1, tag2, tag3")
-    tag_text = ", ".join(tags)
+    if show_url:
+        out.append("[h3]{}[/h3]".format(ITEM_URL.format(tld, item["NeweggItemNumber"])))
 
-    url = " [div] [h3]{}[/h3]".format(ITEM_URL.format(tld, item["NeweggItemNumber"])) if show_url else ""
-    return "[h1]Newegg:[/h1] {} [div] {} [div] {} [div] {}{}".format(title, price, rating, tag_text, url)
+    return start + " [div] ".join(out)
 
 
 # HOOK FUNCTIONS
