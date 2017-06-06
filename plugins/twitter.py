@@ -3,12 +3,13 @@ import random
 from datetime import datetime
 
 import tweepy
-from cloudbot import hook
+from html.parser import HTMLParser
 
+from cloudbot import hook
 from cloudbot.util import timeformat
 
 
-TWITTER_RE = re.compile(r"(?:(?:www.twitter.com|twitter.com)/(?:[-_a-zA-Z0-9]+)/status/)([0-9]+)", re.I)
+STATUS_RE = re.compile(r"(?:(?:www\.twitter\.com|twitter\.com)/(?:[-_a-zA-Z0-9]+)/status/)([0-9]+)", re.I)
 TCO_RE = re.compile(r"https?://t\.co/\w+", re.I)
 
 
@@ -32,12 +33,25 @@ def load_api(bot):
         tw_api = tweepy.API(auth)
 
 
+def get_tweet_by_id(tweet_id):
+    try:
+        tweet = tw_api.get_status(tweet_id)
+    except tweepy.error.TweepError as e:
+        return "Error: {}".format(e.reason[1:-1])
+
+    return tweet
+
+
 def format_tweet(tweet):
+    if isinstance(tweet, str):
+        return tweet
+
     user = tweet.user
 
     # Format the return the text of the tweet
-    text = " ".join(tweet.text.split())
+    text = HTMLParser().unescape(" ".join(tweet.text.split()))
 
+    # Get expanded URLs
     urls = {}
     if tweet.entities.get("urls"):
         for item in tweet.entities["urls"]:
@@ -45,22 +59,22 @@ def format_tweet(tweet):
 
     if "extended_entities" in tweet._json:
         for item in tweet._json["extended_entities"]["media"]:
-            # check for video, use mp4
+            # check for video
             if "video_info" in item:
                 urls[item["url"]] = item["video_info"]["variants"][0]["url"]
                 continue
             urls[item["url"]] = item["media_url_https"]
 
-    # First link seems to be the media element
     while True:
         m = TCO_RE.search(text)
         if not m:
             break
-        if m.group() not in urls:
-            # This is the t.co url for the tweet. remove this
-            text = TCO_RE.sub("", text, count=1)
-            continue
-        text = TCO_RE.sub(urls[m.group()], text, count=1)
+        if m.group() in urls:
+            # Expand the URL
+            text = TCO_RE.sub(urls[m.group()], text, count=1)
+        else:
+            # Ignore and move on
+            TCO_RE.compile("(?!{}){}".format(m.group(), TCO_RE.pattern))
 
     verified = "\u2713" if user.verified else ""
 
@@ -69,45 +83,37 @@ def format_tweet(tweet):
     return "{} ({}@{}) [div] {} ago [div] {}".format(user.name, verified, user.screen_name, time, text.strip())
 
 
-@hook.regex(TWITTER_RE)
+@hook.regex(STATUS_RE)
 def twitter_url(match):
     # Find the tweet ID from the URL
     tweet_id = match.group(1)
 
     # Get the tweet using the tweepy API
-    if tw_api is None:
+    if not tw_api:
         return
 
-    try:
-        tweet = tw_api.get_status(tweet_id)
-    except tweepy.error.TweepError:
-        return
-
+    tweet = get_tweet_by_id(tweet_id)
     return format_tweet(tweet)
 
 
 @hook.command("twitter", "tw", "twatter")
 def twitter(text):
-    """twitter <user> [n] -- Gets last/[n]th tweet from <user>"""
+    """twitter <url>|<user> [n] -- Gets the tweet at <url> or last/[n]th tweet from <user>"""
 
-    if tw_api is None:
+    if not tw_api:
         return "This command requires a twitter API key."
 
-    if re.match(r'^\d+$', text):
-        # user is getting a tweet by id
+    m =  STATUS_RE.search(text)
+    if m:
+        # user is getting a tweet by URL
+        tweet = get_tweet_by_id(m.group(1))
 
-        try:
-            # get tweet by id
-            tweet = tw_api.get_status(text)
-        except tweepy.error.TweepError as e:
-            if "404" in e.reason:
-                return "Could not find tweet."
-            else:
-                return "Error: {}".format(e.reason)
+    elif re.match(r"\d+$", text):
+        # user is getting a tweet by ID
+        tweet = get_tweet_by_id(text)
 
-    elif re.match(r'^\w{1,15}$', text) or re.match(r'^\w{1,15}\s+\d+$', text):
+    elif re.match(r'\w{1,15}$', text) or re.match(r'\w{1,15}\s+\d+$', text):
         # user is getting a tweet by name
-
         if text.find(' ') == -1:
             username = text
             tweet_number = 0
@@ -122,10 +128,7 @@ def twitter(text):
             # try to get user by username
             user = tw_api.get_user(username)
         except tweepy.error.TweepError as e:
-            if "404" in e.reason:
-                return "Could not find user."
-            else:
-                return "Error: {}".format(e.reason)
+            return "Error: {}".format(e.reason[1:-1])
 
         # get the users tweets
         user_timeline = tw_api.user_timeline(id=user.id, count=tweet_number + 1)
@@ -141,7 +144,7 @@ def twitter(text):
             tweet_count = len(user_timeline)
             return "@{} only has {} tweets.".format(user.screen_name, tweet_count)
 
-    elif re.match(r'^#\w+$', text):
+    elif re.match(r'#\w+$', text):
         # user is searching by hashtag
         search = tw_api.search(text)
 
@@ -160,18 +163,14 @@ def twitter(text):
 def twuser(text):
     """twuser <user> -- Get info on the Twitter user <user>"""
 
-    if tw_api is None:
+    if not tw_api:
         return
 
     try:
         # try to get user by username
         user = tw_api.get_user(text)
     except tweepy.error.TweepError as e:
-        if "404" in e.reason:
-            return "Could not find user."
-        else:
-            return "Error: {}".format(e.reason)
-
+        return "Error: {}".format(e.reason[1:-1])
     
     verified = "\u2713" if user.verified else ""
 
