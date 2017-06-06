@@ -45,12 +45,13 @@ def format_output(item, show_url=False):
     item["comments"] = formatting.pluralize(item["num_comments"], 'comment').replace(",", "")
     item["points"] = formatting.pluralize(item["score"], 'point').replace(",", "")
 
-    out = ["[h1]Reddit:[/h1]"]
+    out = []
 
     if show_url and item["link"]:
         out.append("[h3]{link}[/h3]")
 
     out.append("{title}")
+
     if not item["is_self"]:
         out.append("{url}")
     if item["over_18"]:
@@ -62,7 +63,7 @@ def format_output(item, show_url=False):
         item["gilded"] = formatting.pluralize(item["gilded"], 'gild')
         out.append("$(yellow){gilded}$(c)")
 
-    return " [div] ".join(out).format(**item)
+    return "[h1]Reddit:[/h1] " + " [div] ".join(out).format(**item)
 
 
 @hook.regex(reddit_re)
