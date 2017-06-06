@@ -36,7 +36,7 @@ def ping(text, reply):
         if count > 20:
             count = 20
     else:
-        count = 5
+        count = 3
 
     count = str(count)
 
@@ -45,7 +45,7 @@ def ping(text, reply):
     else:
         args = ["ping", "-c", count, host]
 
-    reply("Attempting to ping {} {} times...".format(host, count))
+    #reply("Attempting to ping {} {} times...".format(host, count))
     try:
         pingcmd = subprocess.check_output(args).decode("utf-8")
     except subprocess.CalledProcessError:
