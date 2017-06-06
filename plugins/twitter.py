@@ -58,7 +58,7 @@ def format_tweet(tweet):
             urls[item["url"]] = item["expanded_url"]
 
     if "extended_entities" in tweet._json:
-        high_bitrate = 0
+        high_bitrate = -1  # mp4 of gif appears to be marked 0
         for item in tweet._json["extended_entities"]["media"]:
             # check for video
             if "video_info" in item:
