@@ -35,6 +35,8 @@ def ping(text, reply):
         count = int(args[1])
         if count > 20:
             count = 20
+        elif count < 1:
+            count = 3
     else:
         count = 3
 
