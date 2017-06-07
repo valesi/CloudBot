@@ -251,6 +251,9 @@ def join(text, conn, nick, message, notice):
             target = "#{}".format(target)
         if logchannel:
             message("{} used JOIN to make me join {}.".format(nick, target), logchannel)
+        if target in conn.channels:
+            notice("Already in {}".format(target))
+            continue
         mode = "mode {}".format(target)
         notice("Attempting to join {}...".format(target))
         conn.join(target)
@@ -274,6 +277,9 @@ def part(text, conn, nick, message, chan, notice):
             target = "#{}".format(target)
         if logchannel:
             message("{} used PART to make me leave {}.".format(nick, target), logchannel)
+        if target not in conn.channels:
+            notice("Not in {}".format(target))
+            continue
         notice("Attempting to leave {}...".format(target))
         conn.part(target)
 

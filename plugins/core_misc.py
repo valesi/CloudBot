@@ -73,13 +73,16 @@ def onjoin(conn, bot):
         conn.cmd('MODE', conn.nick, mode)
 
     # Join config-defined channels
-    bot.logger.info("[{}|misc] Bot is joining channels for network.".format(conn.name))
-    for channel in conn.channels:
-        conn.join(channel)
-        yield from asyncio.sleep(0.4)
-        if conn.name == "snoonet":
-            mode = "mode {}".format(channel)
-            conn.send(mode)
+    if conn.channels:
+        bot.logger.info("[{}|misc] Bot is joining channels for network.".format(conn.name))
+        for channel in conn.channels:
+            conn.join(channel)
+            yield from asyncio.sleep(0.4)
+            if conn.name == "snoonet":
+                mode = "mode {}".format(channel)
+                conn.send(mode)
+    else:
+        bot.logger.info("[{}|misc] No channels to join for network.".format(conn.name))
 
     conn.ready = True
     bot.logger.info("[{}|misc] Bot has finished sending join commands for network.".format(conn.name))

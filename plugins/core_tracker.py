@@ -23,9 +23,11 @@ def bot_left_channel(conn, chan):
 
 
 def bot_joined_channel(conn, chan):
-    logger.info("[{}|tracker] Bot joined channel '{}'".format(conn.name, chan))
-    conn.channels.append(chan)
-    conn.history[chan] = deque(maxlen=100)
+    # We sometimes get duplicate joins (bouncer + config)
+    if chan not in conn.channels:
+        logger.info("[{}|tracker] Bot joined channel '{}'".format(conn.name, chan))
+        conn.channels.append(chan)
+        conn.history[chan] = deque(maxlen=100)
 
 
 @asyncio.coroutine
