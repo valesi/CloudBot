@@ -12,7 +12,7 @@ from cloudbot import hook
 from cloudbot.util import timeformat, formatting
 
 
-reddit_re = re.compile(r'.*(((www\.)?reddit\.com/r|redd\.it)[^ ]+)', re.I)
+reddit_re = re.compile(r'.*(((www\.)?reddit\.com/r|redd\.it)[^ ]+)[/.\?]', re.I)
 
 base_url = "https://reddit.com/r/{}/.json"
 short_url = "https://redd.it/{}"
@@ -72,15 +72,15 @@ def reddit_url(match, bot):
     if "redd.it" in url:
         url = "https://" + url
         response = requests.get(url)
-        url = response.url + "/.json"
+        url = response.url + ".json"
     if not urllib.parse.urlparse(url).scheme:
-        url = "https://" + url + "/.json"
+        url = "https://" + url + ".json"
 
     # the reddit API gets grumpy if we don't include headers
     headers = {'User-Agent': bot.user_agent}
     r = requests.get(url, headers=headers)
     if r.status_code != 200:
-        return
+        return "HTTP {}".format(r.status_code)
     data = r.json()
     if type(data) == list:
         item = data[0]["data"]["children"][0]["data"]
