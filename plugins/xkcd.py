@@ -55,6 +55,6 @@ def xkcd(text):
     if text.isdigit():
         if text == "404":
             return "404 Not Found [div] https://www.xkcd.com/404/"
-        return xkcd_info(text)
+        return xkcd_info(text, url=True)
     # Search
     return xkcd_search(text)
