@@ -52,7 +52,7 @@ def get_info(cc, item_id, show_url=False):
     bid_price = body.find(id="prcIsum_bidPrice")
     if bid_price:
         i["bid_price"] = bid_price.text.strip()
-        out += " [div] [h1]Bid:[h1] {bid_price}"
+        out += " [div] [h1]Bid:[/h1] {bid_price}"
     # Discount Buy
     sale_price = body.find(id="mm-saleDscPrc")
     if sale_price:
