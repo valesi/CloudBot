@@ -132,7 +132,7 @@ def bitcoin(text):
 @hook.command("bitcoincash", "bch", autohelp=False)
 def bitcoincash(text):
     """ -- Returns current Bitcoin Cash value """
-    return bitcoin_average("bch " + text)
+    return coinmarketcap("bch " + text)
 
 
 @hook.command("ethereum", "eth", autohelp=False)
