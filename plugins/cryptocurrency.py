@@ -21,7 +21,7 @@ from cloudbot import hook
 
 
 CMC_API_URL = "https://coinmarketcap-nexuist.rhcloud.com/api/{}"
-BA_API_URL = "https://api.bitcoinaverage.com/indices/global/ticker/{}{}"
+BA_API_URL = "https://apiv2.bitcoinaverage.com/indices/global/ticker/{}{}"
 
 CURRENCY_SIGNS = {
     "usd": "$",
@@ -127,6 +127,12 @@ def coinmarketcap(text):
 def bitcoin(text):
     """ -- Returns current Bitcoin value """
     return bitcoin_average("btc " + text)
+
+
+@hook.command("bitcoincash", "bch", autohelp=False)
+def bitcoincash(text):
+    """ -- Returns current Bitcoin Cash value """
+    return bitcoin_average("bch " + text)
 
 
 @hook.command("ethereum", "eth", autohelp=False)
