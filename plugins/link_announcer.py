@@ -64,7 +64,7 @@ def title_re(bot, match, chan, conn):
 
 def get_title(url):
     try:
-        with closing(requests.get(url, headers=HEADERS, stream=True, timeout=5)) as r:
+        with closing(requests.get(url, headers=HEADERS, stream=True, timeout=10)) as r:
             if not r.encoding:
                 r.close()
                 content = r.headers['content-type']
