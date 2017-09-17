@@ -13,7 +13,7 @@ from cloudbot.util.filesize import size as format_bytes
 import cloudbot
 
 
-@hook.command(autohelp=False)
+@hook.command("about", "version", autohelp=False)
 def about(text, conn):
     """-- Gives information about CloudBot. Use .about license for licensing information"""
     if text.lower() in ("license", "gpl", "source"):
