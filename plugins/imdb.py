@@ -8,23 +8,34 @@ from cloudbot import hook
 API_URL = "https://www.omdbapi.com/"
 
 id_re = re.compile("tt\d+")
-imdb_re = re.compile(r'(.*:)//(imdb.com|www.imdb.com)(:[0-9]+)?(.*)', re.I)
+imdb_re = re.compile(r'://(imdb.com|www.imdb.com)/.*/?(tt[0-9]+)', re.I)
 
 
-def get_info(bot, params=None, headers=None):
+@hook.on_start()
+def on_start(bot):
+    global api_key
+    api_key = bot.config["api_keys"].get("omdb")
+
+
+def get_info(bot, params=None, headers=None, show_url=True):
+    if api_key:
+        params["apikey"] = api_key
+    else:
+        return
     content = requests.get("https://www.omdbapi.com/", params=params, headers=headers).json()
 
     if content.get("Error", None) == "Movie not found!":
         return "Not found."
     elif content["Response"] == "True":
-        content["URL"] = "http://www.imdb.com/title/{}".format(content["imdbID"])
-
-        out = "[h1]{Title}[h1] ({Year}) ({Genre}): {Plot}"
+        out = "[h1]{Title}[/h1] ({Year}) ({Genre}): {Plot}"
         if content["Runtime"] != "N/A":
             out += " [div] {Runtime}"
         if content["imdbRating"] != 'N/A' and content["imdbVotes"] != "N/A":
             out += " [div] {imdbRating}/10 ({imdbVotes} votes)"
-        out += " [div] [h3]{URL}[/h3]"
+        if show_url:
+            content["URL"] = "http://www.imdb.com/title/{}".format(content["imdbID"])
+            out += " [div] [h3]{URL}[/h3]"
+
         return out.format(**content)
     else:
         return "Error: {}".format(content["Error"])
@@ -42,11 +53,9 @@ def imdb(text, bot):
 
 @hook.regex(imdb_re)
 def imdb_url(match, bot):
-    imdb_id = match.group(4).split('/')[-1]
-    if imdb_id == "":
-        imdb_id = match.group(4).split('/')[-2]
+    imdb_id = match.group(2)
 
     params = {"i": imdb_id}
     headers = {"User-Agent": bot.user_agent}
 
-    return get_info(bot, params, headers)
+    return get_info(bot, params, headers, show_url=False)

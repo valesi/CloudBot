@@ -5,7 +5,7 @@ from contextlib import closing
 from cloudbot import hook
 
 # This will match any URL except the patterns defined in blacklist.
-blacklist_re = '.*(ebay\.(?:\w+(?:\.\w+)?)|reddit\.com|redd\.it|youtube\.com|youtu\.be|spotify\.com|twitter\.com|twitch\.tv|ama?zo?n\.(?:\w+(?:\.\w+)?)|xkcd\.com|steamcommunity\.com|steampowered\.com|newegg\.com|soundcloud\.com|speedtest\.net|thetvdb\.com|(?:tools\.ietf\.org/\w+/|www\.rfc-editor\.org/\w+/)rfc(?:\d+){,4}|vimeo\.com|wikipedia\.org).*'
+blacklist_re = '.*(ebay\.(?:\w+(?:\.\w+)?)|imdb\.com/.*tt\d+|reddit\.com|redd\.it|youtube\.com|youtu\.be|spotify\.com|twitter\.com|twitch\.tv|ama?zo?n\.(?:\w+(?:\.\w+)?)|xkcd\.com|steamcommunity\.com|steampowered\.com|newegg\.com|soundcloud\.com|speedtest\.net|thetvdb\.com|(?:tools\.ietf\.org/\w+/|www\.rfc-editor\.org/\w+/)rfc(?:\d+){,4}|vimeo\.com|wikipedia\.org).*'
 url_re = re.compile('(?!{})https?://[^\s/$.?#].[^\s]*'.format(blacklist_re), re.I)
 direct_re = re.compile('https?://[^\s/$.?#].[^\s]*')
 
