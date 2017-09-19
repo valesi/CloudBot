@@ -6,11 +6,11 @@ from cloudbot import hook
 def cats():
     """gets a fucking fact about cats."""
     try:
-        r = requests.get('https://catfacts-api.appspot.com/api/facts?number=1', timeout=10.0)
+        r = requests.get('https://catfact.ninja/fact', timeout=10.0)
         j = r.json()
     except:
         return "there was an error finding a cat fact for you."
-    return j.get('facts')
+    return j.get('fact')
 
 
 @hook.command(autohelp=False)
