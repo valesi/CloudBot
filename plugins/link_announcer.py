@@ -79,6 +79,10 @@ def get_title(url):
                 return
             html = BeautifulSoup(content)
             r.close()
-            return " ".join(html.title.text.strip().splitlines())
+            title = html.find("title")
+            if title:
+                return " ".join(title.text.strip().splitlines())
+            else:
+                return "No title"
     except Exception as ex:
         return "Error: {}".format(ex)
