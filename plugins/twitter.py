@@ -137,7 +137,7 @@ def twitter(text):
             return "Error: {}".format(e.reason[1:-1])
 
         # get the users tweets
-        user_timeline = tw_api.user_timeline(id=user.id, count=tweet_number + 1)
+        user_timeline = tw_api.user_timeline(id=user.id, count=tweet_number + 1, tweet_mode="extended")
 
         # if the timeline is empty, return an error
         if not user_timeline:
@@ -152,7 +152,7 @@ def twitter(text):
 
     elif re.match(r'#\w+$', text):
         # user is searching by hashtag
-        search = tw_api.search(text)
+        search = tw_api.search(text, tweet_mode="extended")
 
         if not search:
             return "No tweets found."
