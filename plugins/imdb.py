@@ -33,7 +33,7 @@ def get_info(bot, params=None, headers=None, show_url=True):
         if content["imdbRating"] != 'N/A' and content["imdbVotes"] != "N/A":
             out += " [div] {imdbRating}/10 ({imdbVotes} votes)"
         if show_url:
-            content["URL"] = "http://www.imdb.com/title/{}".format(content["imdbID"])
+            content["URL"] = "http://www.imdb.com/title/{}/".format(content["imdbID"])
             out += " [div] [h3]{URL}[/h3]"
 
         return out.format(**content)
