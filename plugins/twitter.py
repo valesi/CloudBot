@@ -35,7 +35,7 @@ def load_api(bot):
 
 def get_tweet_by_id(tweet_id):
     try:
-        tweet = tw_api.get_status(tweet_id)
+        tweet = tw_api.get_status(tweet_id, tweet_mode="extended")
     except tweepy.error.TweepError as e:
         return "Error: {}".format(e.reason[1:-1])
 
@@ -49,7 +49,7 @@ def format_tweet(tweet):
     user = tweet.user
 
     # Format the return the text of the tweet
-    text = HTMLParser().unescape(" ".join(tweet.text.split()))
+    text = HTMLParser().unescape(" ".join(tweet.full_text.split()))
 
     # Get expanded URLs
     urls = {}
