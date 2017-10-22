@@ -27,11 +27,15 @@ def etymology(text):
 
     etym = etym[0].text_content()
     text = h.xpath('//section')[0].text_content()
-
-    out = '[h1]{}:[/h1] {}'.format(" ".join(etym.split()), " ".join(text.split())).strip()
+    url = h.xpath('//a')[1].attrib['href']
 
     # Strip ellipsis
-    if out.endswith(" …"):
-        out = out[:-2]
+    if text.endswith(" …"):
+        text = text[:-2]
 
-    return out
+    out = '[h1]{}:[/h1] {}'.format(" ".join(etym.split()), " ".join(text.split()))
+
+    if len(out) > 400:
+        out = out[:out.rfind(' ', 0, 400)] + ' ...'
+
+    return "{} [div] [h3]http://www.etymonline.com{}[/h3]".format(out, url)
