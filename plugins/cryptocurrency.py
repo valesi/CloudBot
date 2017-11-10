@@ -86,7 +86,7 @@ def bitcoin_average(text):
 
     data = request.json()
 
-    return format_output(coin, currency, data["last"], data["changes"]["percent"]["day"])
+    return format_output(coin, currency, float(data["last"]), float(data["changes"]["percent"]["day"]))
 
 
 @hook.command("crypto", "cryptocurrency")
