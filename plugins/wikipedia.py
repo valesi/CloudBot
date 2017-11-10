@@ -17,7 +17,7 @@ search_url = api_prefix + "?action=opensearch&format=xml"
 random_url = api_prefix + "?action=query&format=xml&list=random&rnlimit=1&rnnamespace=0"
 
 paren_re = re.compile('\s*\(.*\)$')
-wiki_re = re.compile('wikipedia.org/wiki/(.+)')
+wiki_re = re.compile('wikipedia.org/wiki/([^ ]+)')
 
 
 @hook.regex(wiki_re)
