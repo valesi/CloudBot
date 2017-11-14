@@ -20,7 +20,7 @@ import requests
 from cloudbot import hook
 
 
-CMC_API_URL = "https://coinmarketcap-nexuist.rhcloud.com/api/{}"
+CMC_API_URL = "https://api.coinmarketcap.com/v1/ticker/"
 BA_API_URL = "https://apiv2.bitcoinaverage.com/indices/global/ticker/{}{}"
 
 CURRENCY_SIGNS = {
@@ -40,7 +40,7 @@ CURRENCY_SIGNS = {
     "idr": "Rp",
     "chf": "CHF",
     "btc": "฿"  # Thai Baht
-#    "btc": "₿"  # official symbol in Unicode (\x20bf)
+#    "btc": "₿"  # official symbol in Unicode (\u20bf)
 }
 
 
@@ -96,9 +96,12 @@ def coinmarketcap(text):
     coin = args.pop(0)
 
     currency = args.pop(0) if args else "usd"
+    params = {}
+    if currency is not "usd":
+        params["convert"] = currency.upper()
 
     try:
-        request = requests.get(CMC_API_URL.format(quote_plus(coin)))
+        request = requests.get(CMC_API_URL, params=params)
         request.raise_for_status()
     except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as e:
         return "Could not get value: {}".format(e)
@@ -106,20 +109,17 @@ def coinmarketcap(text):
     data = request.json()
 
     if "error" in data:
-        return "{}.".format(data['error'])
+        return data["error"]
 
-    if currency not in data['price']:
-        return "Currencies supported: {}".format(", ".join(list(data['price'])).upper())
+    # Find the symbol
+    for ccoin in data:
+        if ccoin["symbol"] == coin.upper():
+            if not ccoin.get("price_{}".format(currency)):
+                return "Cannot convert to currency: " + currency
+            return format_output(ccoin["symbol"], currency, float(ccoin["price_{}".format(currency)]), float(ccoin["percent_change_24h"]),
+                                 to_btc=float(ccoin["price_btc"]))
 
-    updated_time = datetime.fromtimestamp(float(data['timestamp']))
-    if (datetime.today() - updated_time).days > 2:
-        # the API retains data for old ticker names that are no longer updated
-        # in these cases we just return a "not found" message
-        return "{} ticker info outdated".format(ticker.upper())
-
-    data = request.json()
-
-    return format_output(data["symbol"].upper(), currency, data["price"][currency], data["change"], avg_change=True, to_btc=data["price"]["btc"])
+    return "Coin not found"
 
 
 # aliases
