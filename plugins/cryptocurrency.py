@@ -113,7 +113,7 @@ def coinmarketcap(text):
 
     # Find the symbol
     for ccoin in data:
-        if ccoin["symbol"] == coin.upper():
+        if ccoin["symbol"] == coin.upper() or ccoin["id"] == coin:
             if not ccoin.get("price_{}".format(currency)):
                 return "Cannot convert to currency: " + currency
             return format_output(ccoin["symbol"], currency, float(ccoin["price_{}".format(currency)]), float(ccoin["percent_change_24h"]),
