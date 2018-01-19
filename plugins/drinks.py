@@ -29,7 +29,7 @@ def drink(text, chan, action):
             out += " and {}".format(x)
         else:
             out += " {},".format(x)
-    n = "n" if drink[:1] in ["a", "e", "i", "o", "u"] else ""
+    n = "n" if drink.lower()[:1] in ["a", "e", "i", "o", "u"] else ""
     out += " and makes {} a{} $(b){}$(b) [div] [h3]{}[/h3]".format(text, n, drink, url)
     action(out, chan)
 
