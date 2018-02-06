@@ -12,12 +12,12 @@ from cloudbot.util import formatting
 # security
 parser = etree.XMLParser(resolve_entities=False, no_network=True)
 
-api_prefix = "https://en.wikipedia.org/w/api.php"
-search_url = api_prefix + "?action=opensearch&format=xml"
+api_url = "https://en.wikipedia.org/w/api.php"
+# TODO implement random
 random_url = api_prefix + "?action=query&format=xml&list=random&rnlimit=1&rnnamespace=0"
 
 paren_re = re.compile('\s*\(.*\)$')
-wiki_re = re.compile('wikipedia.org/wiki/([^ ]+)')
+wiki_re = re.compile('wikipedia.org/wiki/([^\s]+)')
 
 
 @hook.regex(wiki_re)
@@ -33,14 +33,15 @@ def wiki(text):
 
 def get_wiki(text, show_url=False):
     try:
-        request = requests.get(search_url, params={'search': text.strip()})
+        request = requests.get(api_url, params={"action": "opensearch", "format": "xml", "search": requests.utils.unquote(text.strip().replace("_", " "))})
         request.raise_for_status()
     except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as e:
         return "Could not get Wikipedia page: {}".format(e)
+
     x = etree.fromstring(request.text, parser=parser)
 
-    ns = '{http://opensearch.org/searchsuggest2}'
-    items = x.findall(ns + 'Section/' + ns + 'Item')
+    ns = "{http://opensearch.org/searchsuggest2}"
+    items = x.findall("{}Section/{}Item".format(ns, ns))
 
     if not items:
         if x.find('error') is not None:
@@ -60,7 +61,7 @@ def get_wiki(text, show_url=False):
     title = paren_re.sub('', title)
 
     if title.lower() not in desc.lower():
-        desc = title + desc
+        desc = title + ": " + desc
 
     desc = ' '.join(desc.split())  # remove excess spaces
     desc = formatting.truncate(desc, 350)
