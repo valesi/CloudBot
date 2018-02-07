@@ -11,16 +11,27 @@ from cloudbot.util.formatting import pluralize
 
 youtube_re = re.compile(r'(?:youtube.*?(?:v=|/v/)|youtu\.be/|yooouuutuuube.*?id=)([-_a-zA-Z0-9]+)', re.I)
 
-base_url = 'https://www.googleapis.com/youtube/v3/'
-api_url = base_url + 'videos?part=contentDetails%2C+snippet%2C+statistics&id={}&key={}'
-search_api_url = base_url + 'search?part=id&maxResults=1'
-playlist_api_url = base_url + 'playlists?part=snippet%2CcontentDetails%2Cstatus'
-video_url = "http://youtu.be/%s"
+api_url = 'https://www.googleapis.com/youtube/v3/'
+
+video_parts = ["snippet", "contentDetails", "statistics", "liveStreamingDetails"]
+playlist_parts = ["snippet", "contentDetails", "status"]
+
 err_no_api = "The YouTube API is off in the Google Developers Console."
 
 
+@hook.on_start()
+def load_key(bot):
+    global dev_key
+    dev_key = bot.config.get("api_keys", {}).get("google_dev_key", None)
+
+
+@hook.regex(youtube_re)
+def youtube_url(match):
+    return get_video_description(match.group(1))
+
+
 def get_video_description(video_id, show_url=False):
-    json = requests.get(api_url.format(video_id, dev_key)).json()
+    json = requests.get(api_url + "videos", params={"id": video_id, "key": dev_key, "part": ",".join(video_parts)}).json()
 
     if json.get('error'):
         if json['error']['code'] == 403:
@@ -28,10 +39,11 @@ def get_video_description(video_id, show_url=False):
         else:
             return
 
-    data = json['items']
-    snippet = data[0]['snippet']
-    statistics = data[0]['statistics']
-    content_details = data[0]['contentDetails']
+    data = json['items'][0]
+    snippet = data['snippet']
+    statistics = data['statistics']
+    content_details = data['contentDetails']
+    livestream_details = data['liveStreamingDetails']
 
     start = '[h1]YT:[/h1] '
     out = []
@@ -49,15 +61,18 @@ def get_video_description(video_id, show_url=False):
 
     out.append(snippet['channelTitle'])
 
-    length = isodate.parse_duration(content_details.get('duration'))
-    out.append(timeformat.format_time(int(length.total_seconds()), simple=True))
+    if "live" in snippet['liveBroadcastContent']:
+        out.append("$(red)LIVE$(c)")
+    else:
+        length = isodate.parse_duration(content_details.get('duration'))
+        out.append(timeformat.format_time(int(length.total_seconds()), simple=True))
 
     upload_time = time.strptime(snippet.get('publishedAt'), "%Y-%m-%dT%H:%M:%S.000Z")
     out.append(time.strftime("%Y-%m-%d", upload_time))
 
     # Some videos/channels don't give this info??
-    if 'statistics' in data[0]:
-        statistics = data[0]['statistics']
+    if 'statistics' in data:
+        statistics = data['statistics']
     else:
         return start + ' [div] '.join(out)
 
@@ -73,24 +88,13 @@ def get_video_description(video_id, show_url=False):
     return start + ' [div] '.join(out)
 
 
-@hook.on_start()
-def load_key(bot):
-    global dev_key
-    dev_key = bot.config.get("api_keys", {}).get("google_dev_key", None)
-
-
-@hook.regex(youtube_re)
-def youtube_url(match):
-    return get_video_description(match.group(1))
-
-
 @hook.command("youtube", "you", "yt", "y")
 def youtube(text):
     """youtube <query> -- Returns the first YouTube search result for <query>."""
     if not dev_key:
         return "This command requires a Google Developers Console API key."
 
-    json = requests.get(search_api_url, params={"q": text, "key": dev_key, "type": "video"}).json()
+    json = requests.get(api_url + "search", params={"part": "id", "maxResults": "1", "q": text, "key": dev_key, "type": "video"}).json()
 
     if json.get('error'):
         if json['error']['code'] == 403:
@@ -112,7 +116,7 @@ def youtime(text):
     if not dev_key:
         return "This command requires a Google Developers Console API key."
 
-    json = requests.get(search_api_url, params={"q": text, "key": dev_key, "type": "video"}).json()
+    json = requests.get(api_url + "search", params={"q": text, "key": dev_key, "type": "video"}).json()
 
     if json.get('error'):
         if json['error']['code'] == 403:
@@ -124,7 +128,7 @@ def youtime(text):
         return 'No results found.'
 
     video_id = json['items'][0]['id']['videoId']
-    json = requests.get(api_url.format(video_id, dev_key)).json()
+    json = requests.get(api_url + "videos", params={"id": video_id, "key": dev_key, "part": ",".join(video_parts)}).json()
 
     if json.get('error'):
         return
@@ -154,7 +158,7 @@ ytpl_re = re.compile(r'(.*:)//(www.youtube.com/playlist|youtube.com/playlist)(:[
 @hook.regex(ytpl_re)
 def ytplaylist_url(match):
     location = match.group(4).split("=")[-1]
-    json = requests.get(playlist_api_url, params={"id": location, "key": dev_key}).json()
+    json = requests.get(api_url + "playlists", params={"id": location, "key": dev_key, "part": ",".join(playlist_parts)}).json()
 
     if json.get('error'):
         if json['error']['code'] == 403:
