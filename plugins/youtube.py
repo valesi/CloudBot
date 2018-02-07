@@ -41,9 +41,7 @@ def get_video_description(video_id, show_url=False):
 
     data = json['items'][0]
     snippet = data['snippet']
-    statistics = data['statistics']
     content_details = data['contentDetails']
-    livestream_details = data['liveStreamingDetails']
 
     start = '[h1]YT:[/h1] '
     out = []
@@ -63,6 +61,7 @@ def get_video_description(video_id, show_url=False):
 
     if "live" in snippet['liveBroadcastContent']:
         out.append("$(red)LIVE$(c)")
+        #livestream_details = data['liveStreamingDetails']
     else:
         length = isodate.parse_duration(content_details.get('duration'))
         out.append(timeformat.format_time(int(length.total_seconds()), simple=True))
