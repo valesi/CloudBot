@@ -3,18 +3,12 @@ Scaevolus 2009"""
 
 import re
 import requests
-from lxml import etree
 
 from cloudbot import hook
 from cloudbot.util import formatting
 
 
-# security
-parser = etree.XMLParser(resolve_entities=False, no_network=True)
-
 api_url = "https://en.wikipedia.org/w/api.php"
-# TODO implement random
-random_url = api_prefix + "?action=query&format=xml&list=random&rnlimit=1&rnnamespace=0"
 
 paren_re = re.compile('\s*\(.*\)$')
 wiki_re = re.compile('wikipedia.org/wiki/([^\s]+)')
@@ -22,51 +16,57 @@ wiki_re = re.compile('wikipedia.org/wiki/([^\s]+)')
 
 @hook.regex(wiki_re)
 def wiki_re(match):
-    return get_wiki(match.group(1))
+    return wiki(match.group(1))
 
 
-@hook.command("wiki", "wikipedia", "w")
+@hook.command("wiki", "wikipedia", "w", "wik")
 def wiki(text):
     """<query> -- Gets first sentence of Wikipedia article on <query>."""
-    return get_wiki(text, show_url=True)
+    return get_wiki({"action": "opensearch", "redirects": "resolve", "limit": "2", "search": requests.utils.unquote(text.strip().replace("_", " "))}, show_url=True)
 
 
-def get_wiki(text, show_url=False):
+@hook.command(autohelp=False)
+def wikirand():
+    """Gets a random Wikipedia article."""
+    params = {"action": "query", "list": "random", "rnnamespace": "0", "format": "json"}
     try:
-        request = requests.get(api_url, params={"action": "opensearch", "format": "xml", "search": requests.utils.unquote(text.strip().replace("_", " "))})
+        request = requests.get(api_url, params=params)
         request.raise_for_status()
     except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as e:
         return "Could not get Wikipedia page: {}".format(e)
 
-    x = etree.fromstring(request.text, parser=parser)
+    return wiki(request.json()["query"]["random"][0]["title"])
 
-    ns = "{http://opensearch.org/searchsuggest2}"
-    items = x.findall("{}Section/{}Item".format(ns, ns))
 
-    if not items:
-        if x.find('error') is not None:
-            return 'Could not get Wikipedia page: %(code)s: %(info)s' % x.find('error').attrib
-        else:
-            return 'No results found.'
+def get_wiki(params, show_url=False):
+    params["format"] = "json"
+    try:
+        request = requests.get(api_url, params=params)
+        request.raise_for_status()
+    except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as e:
+        return "Could not get Wikipedia page: {}".format(e)
 
-    def extract(item):
-        return [item.find(ns + i).text for i in
-                ('Text', 'Description', 'Url')]
+    data = request.json()
+    if not len(data[1]):
+        return 'No results found.'
 
-    title, desc, url = extract(items[0])
+    idx = 0
+    if "may refer to" in data[2][0]:
+        idx = 1
 
-    if 'may refer to' in desc:
-        title, desc, url = extract(items[1])
+    title, snippet, url = data[1][idx], data[2][idx], data[3][idx]
 
-    title = paren_re.sub('', title)
+    # remove disambiguation parenthetical from title
+    if paren_re.search(title):
+        title = paren_re.sub("", title)
 
-    if title.lower() not in desc.lower():
-        desc = title + ": " + desc
+    out = snippet if title.lower() in snippet.lower() else title + ": " + snippet
 
-    desc = ' '.join(desc.split())  # remove excess spaces
-    desc = formatting.truncate(desc, 350)
+    #snippet = ' '.join(desc.split())  # remove excess spaces
+    out = formatting.truncate(out, 350)
 
     if show_url:
-        desc += " [div] [h3]{}[/h3]".format(requests.utils.quote(url, ":/%"))
+        out += " [div] [h3]{}[/h3]".format(requests.utils.quote(url, safe=":/%"))
 
-    return desc
+    return out
+
