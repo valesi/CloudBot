@@ -1,12 +1,12 @@
 from datetime import datetime
-import re
-import random
 import asyncio
 import functools
+import html
+import re
+import random
 import urllib.parse
 
 import requests
-from html.parser import HTMLParser
 
 from cloudbot import hook
 from cloudbot.util import timeformat, formatting
@@ -20,24 +20,20 @@ short_url = "https://redd.it/{}"
 
 def format_output(item, show_url=False):
     """ takes a reddit post and returns a formatted string """
-    item["title"] = formatting.truncate(item["title"], 200)
+    item["title"] = html.unescape(formatting.truncate(item["title"], 200))
     item["link"] = short_url.format(item["id"])
 
     # Fix some URLs
     if not item["is_self"] and item["url"]:
-        if "imgur.com/" in item["url"]:
-            # Force TLS for imgur
-            if item["url"].startswith("http://"):
-                item["url"] = item["url"].replace("http://", "https://")
-            # Use .gifv links
-            if item["url"].endswith(".gif"):
-                item["url"] += "v"
+        # Use .gifv links for imgur
+        if "imgur.com/" in item["url"] and item["url"].endswith(".gif"):
+            item["url"] += "v"
         # Fix i.reddituploads.com crap ("&amp;" in URL)
         if "i.reddituploads.com/" in item["url"]:
             # Get i.redditmedia.com preview (first one is full size)
             item["url"] = item["preview"]["images"][0]["source"]["url"]
         # Unescape since reddit gives links for HTML
-        item["url"] = HTMLParser().unescape(item["url"])
+        item["url"] = html.unescape(item["url"])
 
     raw_time = datetime.fromtimestamp(int(item["created_utc"]))
     item["timesince"] = timeformat.time_since(raw_time, count=1, simple=True)
@@ -81,6 +77,7 @@ def reddit_url(match, bot):
     r = requests.get(url, headers=headers)
     if r.status_code != 200:
         return "HTTP {}".format(r.status_code)
+
     data = r.json()
     if type(data) == list:
         item = data[0]["data"]["children"][0]["data"]
