@@ -44,7 +44,7 @@ def rfc_re(match):
 
 @hook.command()
 def rfc(text):
-    """<number> - Gets the title and a link to an RFC"""
+    """<number> - Gets the title, publish date, and link to IEFT RFCs."""
     if not text.isdigit():
         return "Invalid RFC number"
 
