@@ -128,7 +128,7 @@ def coinmarketcap(text):
 
 @hook.command()
 def gdax(text):
-    """[coin] -- Gets the current GDAX USD price for <coin>."""
+    """<coin> -- Gets the current GDAX USD price for <coin>."""
     coin = text.upper() if text else "BTC"
 
     try:
