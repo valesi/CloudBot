@@ -240,7 +240,7 @@ class CloudBot:
 
         if event.type is EventType.message:
             # Commands
-            if event.chan.lower() == event.nick.lower():  # private message, no command prefix
+            if event.chan.lower() == event.nick.lower():  # private message, optional command prefix
                 command_re = r'(?i)^(?:[{}]?|{}[,;:]+\s+)(\w+)(?:$|\s+)(.*)'.format(command_prefix, event.conn.nick)
             else:
                 command_re = r'(?i)^(?:[{}]|{}[,;:]+\s+)(\w+)(?:$|\s+)(.*)'.format(command_prefix, event.conn.nick)
@@ -254,7 +254,7 @@ class CloudBot:
                 if cmd_match:
                     command = cmd_match.group(1).lower()
                     cmd_text = cmd_match.group(2).strip()
-                elif inline_cmd_match:
+                else:
                     command = inline_cmd_match.group(1).lower()
                     cmd_text = inline_cmd_match.group(2).strip()
 
@@ -262,20 +262,20 @@ class CloudBot:
                 if command in self.plugin_manager.commands:
                     command_hook = self.plugin_manager.commands[command]
                 else:
-                    potential_matches = []
-                    potential_functions = []
-                    for potential_match, hook in self.plugin_manager.commands.items():
-                        if potential_match.startswith(command):
-                            potential_matches.append((potential_match, hook))
-                            # Aliases for same command
-                            if (hook.plugin.title, hook.function_name) not in potential_functions:
-                                potential_functions.append((hook.plugin.title, hook.function_name))
+                    potential_matches = {}
+                    for alias, hook in self.plugin_manager.commands.items():
+                        if alias.startswith(command):
+                            # plugin + function name groups aliases
+                            key = hook.plugin.title + hook.function.__name__
+                            if key not in potential_matches:
+                                potential_matches[key] = [hook]
+                            potential_matches[key].append(alias)
                     if potential_matches:
-                        if len(potential_functions) == 1 or len(potential_matches) == 1:
-                            command_hook = potential_matches[0][1]
+                        if len(potential_matches) == 1:
+                            command_hook = next(iter(potential_matches.values()))[0]
                         else:
-                            event.reply("Possible commands: {}".format(
-                                formatting.get_text_list([command for command, hook in potential_matches])))
+                            sorted_cmds = sorted(["/".join(sorted(aliases[1:])) for aliases in potential_matches.values()])
+                            event.reply("Possible commands: " + ", ".join(sorted_cmds))
                 if command_hook:
                     command_event = CommandEvent(hook=command_hook, text=cmd_text,
                                              triggered_command=command, base_event=event)
