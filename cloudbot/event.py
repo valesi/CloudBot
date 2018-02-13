@@ -366,7 +366,7 @@ class CommandEvent(Event):
                 # this is using the new format of `<args> - doc`
                 message = "{}{} {}".format(self.conn.config["command_prefix"][0], self.triggered_command, self.hook.doc)
 
-        self.notice(message, target=target)
+        self.reply(message, target=target)
 
 
 class RegexEvent(Event):

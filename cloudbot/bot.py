@@ -274,7 +274,7 @@ class CloudBot:
                         if len(potential_functions) == 1 or len(potential_matches) == 1:
                             command_hook = potential_matches[0][1]
                         else:
-                            event.notice("Possible matches: {}".format(
+                            event.reply("Possible commands: {}".format(
                                 formatting.get_text_list([command for command, hook in potential_matches])))
                 if command_hook:
                     command_event = CommandEvent(hook=command_hook, text=cmd_text,
