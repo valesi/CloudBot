@@ -13,7 +13,6 @@ License:
     GPL v3
 """
 from datetime import datetime
-from urllib.parse import quote_plus
 
 import requests
 
@@ -22,6 +21,8 @@ from cloudbot import hook
 
 CMC_API_URL = "https://api.coinmarketcap.com/v1/ticker/"
 BA_API_URL = "https://apiv2.bitcoinaverage.com/indices/global/ticker/{}{}"
+GDAX_API_URL = "https://api.gdax.com/products/{}-USD/ticker"
+
 
 CURRENCY_SIGNS = {
     "usd": "$",
@@ -44,30 +45,32 @@ CURRENCY_SIGNS = {
 }
 
 
-def format_output(coin, currency, price, change, avg_change=False, to_btc=None):
-    out = ["[h1]{}:[/h1] ".format(coin)]
+def format_output(coin, currency, price, change=None, avg_change=False, to_btc=None):
+    price = float(price)
+    out = []
 
     if currency.lower() in CURRENCY_SIGNS:
-        out[0] = out[0] + "{}{:,.2f}".format(CURRENCY_SIGNS[currency.lower()], price)
+        out.append("{}{:,.2f}".format(CURRENCY_SIGNS[currency.lower()], price))
     else:
-        out[0] = out[0] + "{:,.2f} {}".format(float(price), currency.upper())
+        out.append("{:,.2f} {}".format(price, currency.upper()))
 
-    change = float(change)
-    if change > 0:
-        change_str = "$(green){}%$(c)".format(change)
-    elif change < 0:
-        change_str = "$(red){}%$(c)".format(change)
-    else:
-        change_str = "{}%".format(change)
-    out.append("{} 24hr {}change".format(change_str.format(change), "average " if avg_change else ""))
+    if change:
+        change = float(change)
+        if change > 0:
+            change_str = "$(green){}%$(c)".format(change)
+        elif change < 0:
+            change_str = "$(red){}%$(c)".format(change)
+        else:
+            change_str = "{}%".format(change)
+        out.append("{} 24hr{}".format(change_str.format(change), " avg" if avg_change else ""))
 
     if to_btc is not None:  # Could be 0.0
         out.append("{:,.7f} BTC".format(float(to_btc)))
 
-    return " [div] ".join(out)
+    return "[h1]{}:[/h1] ".format(coin) + " [div] ".join(out)
 
 
-@hook.command("btca")
+@hook.command("btcavg")
 def bitcoin_average(text):
     """<coin> [currency] -- Gets the price of <coin> against [currency], defaulting to USD"""
     args = text.upper().split()
@@ -76,20 +79,20 @@ def bitcoin_average(text):
     currency = args.pop(0) if args else "USD"
 
     try:
-        request = requests.get(BA_API_URL.format(coin, currency))
-        request.raise_for_status()
+        response = requests.get(BA_API_URL.format(coin, currency))
+        response.raise_for_status()
     except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as e:
         if "for symbol is not valid for url" in str(e):
             return "Invalid symbol: " + coin + currency
         else:
             return "Could not get value: {}".format(e)
 
-    data = request.json()
+    data = response.json()
 
-    return format_output(coin, currency, float(data["last"]), float(data["changes"]["percent"]["day"]))
+    return format_output(coin, currency, data["last"], data["changes"]["percent"]["day"], True)
 
 
-@hook.command("crypto", "cryptocurrency")
+@hook.command("cryptocurrency", "cmc", "crypto")
 def coinmarketcap(text):
     """<ticker> [currency] -- Returns current value of a cryptocurrency. [currency] defaults to USD."""
     args = text.lower().split()
@@ -101,12 +104,12 @@ def coinmarketcap(text):
         params["convert"] = currency.upper()
 
     try:
-        request = requests.get(CMC_API_URL, params=params)
-        request.raise_for_status()
+        response = requests.get(CMC_API_URL, params=params)
+        response.raise_for_status()
     except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as e:
         return "Could not get value: {}".format(e)
 
-    data = request.json()
+    data = response.json()
 
     if "error" in data:
         return data["error"]
@@ -114,12 +117,32 @@ def coinmarketcap(text):
     # Find the symbol
     for ccoin in data:
         if ccoin["symbol"] == coin.upper() or ccoin["id"] == coin:
-            if not ccoin.get("price_{}".format(currency)):
+            if "price_{}".format(currency) not in ccoin:
                 return "Cannot convert to currency: " + currency
-            return format_output(ccoin["symbol"], currency, float(ccoin["price_{}".format(currency)]), float(ccoin["percent_change_24h"]),
+            return format_output(ccoin["symbol"], currency, ccoin["price_{}".format(currency)], ccoin["percent_change_24h"],
                                  to_btc=float(ccoin["price_btc"]))
 
     return "Coin not found"
+
+
+
+@hook.command()
+def gdax(text):
+    """[coin] -- Gets the current GDAX USD price for <coin>."""
+    coin = text.upper() if text else "BTC"
+
+    try:
+        response = requests.get(GDAX_API_URL.format(coin))
+        response.raise_for_status()
+    except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as e:
+        return "Could not get value: {}".format(e)
+
+    data = response.json()
+
+    if "message" in data:
+        return data["message"]
+
+    return format_output(coin, "USD", data["price"])
 
 
 # aliases
