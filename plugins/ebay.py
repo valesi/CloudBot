@@ -6,7 +6,6 @@ Provides a command and URL parser for viewing eBay products.
 
 import requests
 import re
-import time
 
 from bs4 import BeautifulSoup
 

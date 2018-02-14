@@ -3,7 +3,6 @@ import os
 import random
 
 from cloudbot import hook
-from cloudbot.util import web
 
 
 @hook.onload()

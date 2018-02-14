@@ -25,15 +25,15 @@ def down(bot, text):
             up = True
         else:
             reason = r.status_code
-    except HTTPError:
+    except requests.exceptions.HTTPError:
         reason = "HTTP error"
     except ConnectionError:
         reason = "connection error"
-    except SSLError as ex:
+    except requests.exceptions.SSLError as ex:
         reason = "TLS error"
-    except TooManyRedirects:
+    except requests.exceptions.TooManyRedirects:
         reason = "too many redirects"
-    except Timeout:
+    except requests.exceptions.Timeout:
         reason = "timeout after 10s"
 
     if up:

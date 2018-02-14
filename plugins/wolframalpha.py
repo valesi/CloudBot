@@ -6,7 +6,7 @@ from lxml import etree
 from requests import HTTPError
 
 from cloudbot import hook
-from cloudbot.util import web, formatting
+from cloudbot.util import web
 
 
 # security
@@ -41,7 +41,7 @@ def wolframalpha(text, message):
     try:
         request.raise_for_status()
     except HTTPError as e:
-        reply("Error getting query: {}".format(e.response.status_code))
+        message("Error getting query: {}".format(e.response.status_code))
         raise
 
     if request.status_code != requests.codes.ok:

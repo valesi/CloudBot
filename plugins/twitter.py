@@ -104,12 +104,12 @@ def twitter_url(match):
 
 @hook.command("twitter", "tw", "twatter")
 def twitter(text):
-    """twitter <url>|<user> [n] -- Gets the tweet at <url> or last/[n]th tweet from <user>"""
+    """<url>|<user> [n] -- Gets the tweet at <url> or last/[n]th tweet from <user>"""
 
     if not tw_api:
         return "This command requires a twitter API key."
 
-    m =  STATUS_RE.search(text)
+    m = STATUS_RE.search(text)
     if m:
         # user is getting a tweet by URL
         tweet = get_tweet_by_id(m.group(1))
@@ -177,7 +177,7 @@ def twuser(text, reply):
         user = tw_api.get_user(text)
     except tweepy.error.TweepError as e:
         return "Error: {}".format(e.reason[1:-1])
-    
+
     verified = "\u2713" if user.verified else ""
 
     tf = lambda l, s: "[h1]{}:[/h1] {}".format(l, s)

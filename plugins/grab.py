@@ -1,4 +1,3 @@
-import re
 import random
 from collections import defaultdict
 from threading import RLock
@@ -96,7 +95,7 @@ def get_latest_line(conn, chan, nick):
 
 
 @hook.command("quoteadd", "qadd", "qa", "grab")
-def grab(text, nick, chan, db, conn):
+def grab(text, nick, chan, db, conn, reply):
     """<nick> - grabs the last message from the specified nick and adds it to the quote database"""
     if text.lower() == nick.lower():
         return "Think you're hot shit, eh?"
@@ -114,9 +113,9 @@ def grab(text, nick, chan, db, conn):
 
         try:
             grab_add(name.casefold(), timestamp, msg, chan, db)
-        except SQLAlchemyError:
-            logger.exception("Error occurred when grabbing %s in %s", name, chan)
-            return "Error occurred."
+        except SQLAlchemyError as ex:
+            reply("Failed to add quote to db.")
+            raise
 
         if check_grabs(name.casefold(), msg, chan):
             return random.choice(added_responses)

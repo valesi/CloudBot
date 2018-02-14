@@ -18,7 +18,7 @@ def get_info(rfc_id, show_url=False):
         req = requests.get(url, headers=headers, timeout=5.0, stream=True)
         req.raise_for_status()
     except Exception as ex:
-        return "Error reaching {}: {}".format(req.url, ex)
+        return "Error reaching {}: {}".format(url, ex)
 
     soup = BeautifulSoup(req.text, "lxml")
     date = "N/A"

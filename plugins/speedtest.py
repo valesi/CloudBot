@@ -2,7 +2,6 @@ import json
 import re
 
 import requests
-from lxml import html
 
 from cloudbot import hook
 
@@ -11,7 +10,7 @@ base_url = "http://www.speedtest.net/result/{}"
 
 
 @hook.regex(speedtest_re)
-def speedtest_url(match, bot):
+def speedtest_url(match):
     test_id = match.group(1)
     url = base_url.format(test_id)
 

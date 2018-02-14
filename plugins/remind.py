@@ -18,7 +18,7 @@ from datetime import datetime
 from sqlalchemy import Table, Column, String, DateTime, PrimaryKeyConstraint
 
 from cloudbot import hook
-from cloudbot.util import database, colors
+from cloudbot.util import database
 from cloudbot.util.timeformat import format_time, time_since
 from cloudbot.util.timeparse import time_parse
 
