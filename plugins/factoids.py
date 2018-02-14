@@ -9,7 +9,7 @@ from cloudbot.util import database, colors, web
 from cloudbot.util.formatting import gen_markdown_table
 
 # below is the default factoid in every channel you can modify it however you like
-default_dict = {"commands": "https://snoonet.org/gonzobot"}
+default_dict = {}
 
 re_lineends = re.compile(r'[\r\n]*')
 
@@ -76,7 +76,7 @@ def del_factoid(db, chan, word):
 
 
 @hook.command("r", "remember", permissions=["op", "chanop"])
-def remember(text, nick, db, chan, notice):
+def remember(text, nick, db, chan, reply):
     """<word> [+]<data> - remembers <data> with <word> - add + to <data> to append. If the input starts with <act> the message will be sent as an action. If <user> in in the message it will be replaced by input arguments when command is called."""
     global factoid_cache
     try:
@@ -98,40 +98,40 @@ def remember(text, nick, db, chan, notice):
             data = old_data + new_data
         else:
             data = old_data + ' ' + new_data
-        notice("Appending \x02{}\x02 to \x02{}\x02".format(new_data, old_data))
+        reply("Appending \x02{}\x02 to \x02{}\x02".format(new_data, old_data))
     else:
-        notice('Remembering \x02{0}\x02 for \x02{1}\x02. Type {2}{1} to see it.'.format(data, word, FACTOID_CHAR))
+        reply('Remembering \x02{0}\x02 for \x02{1}\x02. Type {2}{1} to see it.'.format(data, word, FACTOID_CHAR))
         if old_data:
-            notice('Previous data was \x02{}\x02'.format(old_data))
+            reply('Previous data was \x02{}\x02'.format(old_data))
 
     add_factoid(db, word, chan, data, nick)
 
 
 @hook.command("f", "forget", permissions=["op", "chanop"])
-def forget(text, chan, db, notice):
+def forget(text, chan, db, reply):
     """<word> - forgets previously remembered <word>"""
     global factoid_cache
     data = factoid_cache[chan][text.lower()]
 
     if data:
         del_factoid(db, chan, text)
-        notice('"{}" has been forgotten.'.format(data.replace('`', "'")))
+        reply('"{}" has been forgotten.'.format(data.replace('`', "'")))
         return
     else:
-        notice("I don't know about that.")
+        reply("I don't know that factoid.")
         return
 
 
 @hook.command()
-def info(text, chan, notice):
+def info(text, chan, reply):
     """<factoid> - shows the source of a factoid"""
 
     text = text.strip().lower()
 
     if text in factoid_cache[chan]:
-        notice(factoid_cache[chan][text])
+        reply(factoid_cache[chan][text])
     else:
-        notice("Unknown Factoid.")
+        reply("Unknown Factoid.")
 
 
 factoid_re = re.compile(r'^{} ?(.+)'.format(re.escape(FACTOID_CHAR)), re.I)
@@ -163,20 +163,20 @@ def factoid(content, match, chan, message, action):
 
 
 @hook.command("listfacts", autohelp=False)
-def listfactoids(notice, chan):
+def listfactoids(reply, chan):
     """- lists all available factoids"""
     reply_text = []
     reply_text_length = 0
     for word in sorted(factoid_cache[chan].keys()):
         added_length = len(word) + 2
         if reply_text_length + added_length > 400:
-            notice(", ".join(reply_text))
+            reply(", ".join(reply_text))
             reply_text = []
             reply_text_length = 0
         else:
             reply_text.append(word)
             reply_text_length += added_length
-    notice(", ".join(reply_text))
+    reply(", ".join(reply_text))
 
 
 @hook.command("listdetailedfacts", autohelp=False)
