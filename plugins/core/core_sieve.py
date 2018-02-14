@@ -66,7 +66,7 @@ def sieve_suite(bot, event, _hook):
                 break
 
         if not allowed:
-            event.notice("Sorry, you are not allowed to use this command.")
+            event.reply("I'm sorry, Dave. I'm afraid I can't do that.")
             return None
 
     # check command spam tokens
