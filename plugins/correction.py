@@ -3,7 +3,7 @@ import re
 from cloudbot import hook
 from cloudbot.util.formatting import ireplace
 
-correction_re = re.compile(r"^[sS]/(?:(.*?)(?<!\\)/(.*?)(?:(?<!\\)/([igx]{,4}))?)\s*$")
+correction_re = re.compile(r"^(?:[^s])?[sS]/(?:(.*?)(?<!\\)/(.*?)(?:(?<!\\)/([igx]{,4}))?)\s*$")
 unescape_re = re.compile(r'\\(.)')
 
 
