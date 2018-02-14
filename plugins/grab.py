@@ -42,12 +42,12 @@ def load_cache(db):
             grab_cache.setdefault(chan, {}).setdefault(name, []).append(quote)
 
 
-@hook.command("moregrab", autohelp=False)
+@hook.command("morequote", "qm", "moregrab", autohelp=False)
 def moregrab(text, chan, conn):
-    """[page] - if a grab search has lots of results the results are pagintated. If the most recent search is paginated the pages are stored for retreival. If no argument is given the next page will be returned else a page number can be specified."""
+    """[page] - if a search has lots of results the results are pagintated. If the most recent search is paginated the pages are stored for retreival. If no argument is given the next page will be returned else a page number can be specified."""
     pages = search_pages[conn.name].get(chan)
     if not pages:
-        return "There are no grabsearch pages to show."
+        return "There are no pages to show."
 
     if text:
         try:
@@ -149,7 +149,7 @@ def lastgrab(text, chan, message):
 
 @hook.command("q", "rquote", "quoterandom", "grabrandom", "grabr", autohelp=False)
 def grabrandom(text, chan, message):
-    """[nick] - grabs a random quote from the grab database"""
+    """[nick] - grabs a random quote from the quote database"""
     with cache_lock:
         if text:
             tokens = text.split(' ')
@@ -161,7 +161,7 @@ def grabrandom(text, chan, message):
             try:
                 name = random.choice(list(grab_cache[chan].keys()))
             except KeyError:
-                return "I couldn't find any grabs in {}.".format(chan)
+                return "I couldn't find any quotes in {}.".format(chan)
         try:
             grab = random.choice(grab_cache[chan][name.lower()])
         except KeyError:
@@ -175,14 +175,14 @@ def grabrandom(text, chan, message):
 
 @hook.command("quotesearch", "quotes", "qs", "grabsearch", "grabs", autohelp=False)
 def grabsearch(text, chan, conn):
-    """[text] - matches "text" against nicks or grab strings in the database"""
+    """[text] - matches "text" against nicks or quote strings in the database"""
     result = []
     lower_text = text.lower()
     with cache_lock:
         try:
             chan_grabs = grab_cache[chan]
         except LookupError:
-            return "I couldn't find any grabs in {}.".format(chan)
+            return "I couldn't find any quotes in {}.".format(chan)
 
         try:
             quotes = chan_grabs[lower_text]
