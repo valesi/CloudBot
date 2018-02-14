@@ -6,8 +6,8 @@ if sys.version_info < (3, 4, 0):
     sys.exit(1)
 
 import json
-import logging.config
 import logging
+import logging.config
 import os
 
 __version__ = "1.0.9"
@@ -79,8 +79,10 @@ def _setup():
         dict_config["handlers"]["console"]["level"] = "DEBUG"
         dict_config["loggers"]["asyncio"] = {
             "level": "DEBUG",
-            "handlers": ["console", "file"]
+            "handlers": ["console"]
         }
+        if file_log:
+            dict_config["loggers"]["asyncio"]["handlers"].append("file")
 
     if logging_config.get("file_debug", False):
         dict_config["handlers"]["debug_file"] = {
