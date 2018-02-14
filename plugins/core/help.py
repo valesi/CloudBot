@@ -60,9 +60,7 @@ def help_command(text, chan, conn, bot, notice, message, has_permission, trigger
                     continue
 
             # add the command to lines sent
-            command = plugin.name
-
-            commands.append(command)
+            commands.append(plugin.name)
 
         # list of lines to send to the user
         lines = formatting.chunk_str("Here's a list of commands you can use: " + ", ".join(commands))

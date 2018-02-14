@@ -21,7 +21,7 @@ from cloudbot.event import Event, CommandEvent, RegexEvent, EventType
 from cloudbot.hook import Action
 from cloudbot.plugin import PluginManager
 from cloudbot.reloader import PluginReloader, ConfigReloader
-from cloudbot.util import database, formatting, async_util
+from cloudbot.util import database, async_util
 
 try:
     from cloudbot.web.main import WebInterface
@@ -346,6 +346,9 @@ class CloudBot:
                     potential_matches = {}
                     for alias, hook in self.plugin_manager.commands.items():
                         if alias.startswith(command):
+                            # only list commands the user has permissions for
+                            if not event.check_permissions(hook.permissions, notice=False):
+                                continue
                             # plugin + function name groups aliases
                             key = hook.plugin.title + hook.function_name
                             if key not in potential_matches:
@@ -361,7 +364,7 @@ class CloudBot:
                             add_hook(command_hook, command_event)
                         else:
                             sorted_cmds = sorted(
-                                ["/".join(sorted(aliases[1:])) for aliases in potential_matches.values()])
+                                ["/".join((aliases[1:])) for aliases in potential_matches.values()])
                             event.reply("Possible matches: " + ", ".join(sorted_cmds))
         if event.type in (EventType.message, EventType.action):
             # Regex hooks
