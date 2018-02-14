@@ -9,7 +9,7 @@ from cloudbot.util import formatting
 
 @hook.command("help", autohelp=False)
 @asyncio.coroutine
-def help_command(text, chan, conn, bot, notice, message, has_permission, triggered_prefix):
+def help_command(text, chan, conn, bot, notice, reply, message, has_permission, triggered_prefix):
     """[command] - gives help for [command], or lists all available commands if no command is specified
     :type text: str
     :type conn: cloudbot.client.Client
@@ -18,7 +18,7 @@ def help_command(text, chan, conn, bot, notice, message, has_permission, trigger
     if text:
         searching_for = text.lower().strip()
         if not re.match(r'\w+$', searching_for):
-            notice("Invalid command name '{}'".format(text))
+            reply("Invalid command name '{}'".format(text))
             return
     else:
         searching_for = None
@@ -33,14 +33,14 @@ def help_command(text, chan, conn, bot, notice, message, has_permission, trigger
                 else:
                     # this is using the new format of `<args> - doc`
                     message = "{}{} {}".format(triggered_prefix, searching_for, doc)
-                notice(message)
+                reply(message)
             else:
-                notice("Command {} has no additional documentation.".format(searching_for))
+                reply("Command {} has no additional documentation.".format(searching_for))
             aliases = bot.plugin_manager.commands[searching_for].aliases
             if len(aliases) > 1:
-                notice("Aliases: {}".format(", ".join(a for a in bot.plugin_manager.commands[searching_for].aliases)))
+                reply("Aliases: {}".format(", ".join(a for a in bot.plugin_manager.commands[searching_for].aliases)))
         else:
-            notice("Unknown command '{}'".format(searching_for))
+            reply("Unknown command '{}'".format(searching_for))
     else:
         commands = []
 
@@ -64,6 +64,7 @@ def help_command(text, chan, conn, bot, notice, message, has_permission, trigger
 
         # list of lines to send to the user
         lines = formatting.chunk_str("Here's a list of commands you can use: " + ", ".join(commands))
+        lines.append("For detailed help, use {}help <command>, without the brackets.".format(triggered_prefix))
 
         for line in lines:
             if chan[:1] == "#":
@@ -72,12 +73,10 @@ def help_command(text, chan, conn, bot, notice, message, has_permission, trigger
                 # This is an user in this case.
                 message(line)
 
-        notice("For detailed help, use {}help <command>, without the brackets.".format(triggered_prefix))
-
 
 @hook.command
 @asyncio.coroutine
-def cmdinfo(text, bot, notice):
+def cmdinfo(text, bot, reply):
     """<command> - Gets various information about a command"""
     cmd = text.split()[0].lower().strip()
 
@@ -93,14 +92,14 @@ def cmdinfo(text, bot, notice):
             if len(potentials) == 1:
                 cmd_hook = potentials[0][1]
             else:
-                notice("Possible matches: {}".format(
+                reply("Possible matches: {}".format(
                     formatting.get_text_list(sorted([command for command, plugin in potentials]))))
                 return
         else:
             cmd_hook = None
 
     if cmd_hook is None:
-        notice("Unknown command: '{}'".format(cmd))
+        reply("Unknown command: '{}'".format(cmd))
         return
 
     hook_name = cmd_hook.plugin.title + "." + cmd_hook.function_name
@@ -111,7 +110,7 @@ def cmdinfo(text, bot, notice):
     if cmd_hook.permissions:
         info += ", Permissions: [{}]".format(', '.join(cmd_hook.permissions))
 
-    notice(info)
+        reply(info)
 
 
 @hook.command(permissions=["botcontrol"], autohelp=False)
