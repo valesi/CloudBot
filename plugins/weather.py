@@ -1,6 +1,6 @@
 import requests
-
 from sqlalchemy import Table, Column, PrimaryKeyConstraint, String
+
 from cloudbot import hook
 from cloudbot.util import database
 
@@ -40,7 +40,7 @@ def load_cache(db):
     for row in db.execute(table.select()):
         nick = row["nick"]
         location = row["loc"]
-        location_cache.append((nick,location))
+        location_cache.append((nick, location))
 
 
 def add_location(nick, location, db):
@@ -74,8 +74,8 @@ def get_location(nick):
 
 
 @hook.command("weather", "we", autohelp=False)
-def weather(text, reply, db, nick, notice):
-    """weather <location> -- Gets weather data for <location>. First use requires location then the bot remembers it."""
+def weather(text, reply, db, nick, notice_doc):
+    """[location] - Gets weather data for [location], remembering the last used location if absent."""
     if not wunder_key:
         return "This command requires a Weather Underground API key."
 
@@ -84,7 +84,7 @@ def weather(text, reply, db, nick, notice):
     if not text:
         location = get_location(nick)
         if not location:
-            notice(weather.__doc__)
+            notice_doc()
             return
     else:
         location = find_location(text)
@@ -96,32 +96,44 @@ def weather(text, reply, db, nick, notice):
     url = forecast_api.format(wunder_key, location)
     response = requests.get(url).json()
 
-    if response['response'].get('error'):
-        return "{}".format(response['response']['error']['description'])
+    error = response['response'].get('error')
+    if error:
+        return "{}".format(error['description'])
 
-    forecast_today = response["forecast"]["simpleforecast"]["forecastday"][0]
-    forecast_tomorrow = response["forecast"]["simpleforecast"]["forecastday"][1]
+    forecast = response["forecast"]["simpleforecast"]["forecastday"]
+    if not forecast:
+        return "Unable to retrieve forecast data."
+
+    forecast_today = forecast[0]
+    forecast_tomorrow = forecast[1]
+
+    forecast_today_high = forecast_today['high']
+    forecast_today_low = forecast_today['low']
+    forecast_tomorrow_high = forecast_tomorrow['high']
+    forecast_tomorrow_low = forecast_tomorrow['low']
+
+    current_observation = response['current_observation']
 
     # put all the stuff we want to use in a dictionary for easy formatting of the output
     weather_data = {
-        "place": response['current_observation']['display_location']['full'],
-        "conditions": response['current_observation']['weather'],
-        "temp_f": response['current_observation']['temp_f'],
-        "temp_c": response['current_observation']['temp_c'],
-        "humidity": response['current_observation']['relative_humidity'],
-        "wind_kph": response['current_observation']['wind_kph'],
-        "wind_mph": response['current_observation']['wind_mph'],
-        "wind_direction": response['current_observation']['wind_dir'],
+        "place": current_observation['display_location']['full'],
+        "conditions": current_observation['weather'],
+        "temp_f": current_observation['temp_f'],
+        "temp_c": current_observation['temp_c'],
+        "humidity": current_observation['relative_humidity'],
+        "wind_kph": current_observation['wind_kph'],
+        "wind_mph": current_observation['wind_mph'],
+        "wind_direction": current_observation['wind_dir'],
         "today_conditions": forecast_today['conditions'],
-        "today_high_f": forecast_today['high']['fahrenheit'],
-        "today_high_c": forecast_today['high']['celsius'],
-        "today_low_f": forecast_today['low']['fahrenheit'],
-        "today_low_c": forecast_today['low']['celsius'],
+        "today_high_f": forecast_today_high['fahrenheit'],
+        "today_high_c": forecast_today_high['celsius'],
+        "today_low_f": forecast_today_low['fahrenheit'],
+        "today_low_c": forecast_today_low['celsius'],
         "tomorrow_conditions": forecast_tomorrow['conditions'],
-        "tomorrow_high_f": forecast_tomorrow['high']['fahrenheit'],
-        "tomorrow_high_c": forecast_tomorrow['high']['celsius'],
-        "tomorrow_low_f": forecast_tomorrow['low']['fahrenheit'],
-        "tomorrow_low_c": forecast_tomorrow['low']['celsius']
+        "tomorrow_high_f": forecast_tomorrow_high['fahrenheit'],
+        "tomorrow_high_c": forecast_tomorrow_high['celsius'],
+        "tomorrow_low_f": forecast_tomorrow_low['fahrenheit'],
+        "tomorrow_low_c": forecast_tomorrow_low['celsius'],
     }
 
     reply("[h1]{place}:[/h1] {conditions}, {temp_c}°C ({temp_f}°F), {humidity}RH, "

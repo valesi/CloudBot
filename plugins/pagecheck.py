@@ -1,8 +1,8 @@
 import urllib.parse
 
-from bs4 import BeautifulSoup
 import requests
 import requests.exceptions
+from bs4 import BeautifulSoup
 
 from cloudbot import hook
 
@@ -56,6 +56,7 @@ def isup(text):
 
     try:
         response = requests.get('http://isup.me/' + domain)
+        response.raise_for_status()
     except requests.exceptions.ConnectionError:
         return "Failed to get status."
     if response.status_code != requests.codes.ok:

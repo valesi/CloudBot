@@ -4,7 +4,6 @@ Provides a command to allow users to look up information on domain names using j
 https://jsonwhoisapi.com/docs/
 """
 import requests
-from datetime import datetime
 from requests.auth import HTTPBasicAuth
 
 from cloudbot import hook
@@ -21,10 +20,10 @@ def load_key(bot):
 
 
 @hook.command
-def whois(text):
+def whois(text, reply):
     """<domain> -- Does a whois query on <domain>."""
     if not account_id or not api_key:
-        return "No jsonwhoisapi.com API user/key."
+        return "Missing jsonwhoisapi.com API user/key."
 
     params = {"identifier": text.lower()}
 
@@ -32,16 +31,14 @@ def whois(text):
 
     try:
         req = requests.get(API_URL, params=params, auth=auth, timeout=10.0)
+        req.raise_for_status()
     except Exception as ex:
-        return "Error: {}".format(ex)
-
-    if not req.ok:
-        return "Error: HTTP {}".format(req.status_code)
+        reply("Error: {}".format(ex))
+        raise
 
     data = req.json()
 
-    info = []
-    info.append(data["name"])
+    info = [data["name"]]
     info.append("Reg'd" if data["registered"] else "Unreg'd")
 
     # Remove extra spaces....

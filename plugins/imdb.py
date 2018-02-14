@@ -5,8 +5,6 @@ import requests
 from cloudbot import hook
 
 
-API_URL = "https://www.omdbapi.com/"
-
 id_re = re.compile("tt\d+")
 imdb_re = re.compile(r'://(imdb.com|www.imdb.com)/.*/?(tt[0-9]+)', re.I)
 
@@ -17,7 +15,7 @@ def on_start(bot):
     api_key = bot.config["api_keys"].get("omdb")
 
 
-def get_info(bot, params=None, headers=None, show_url=True):
+def get_info(params=None, headers=None, show_url=True):
     if api_key:
         params["apikey"] = api_key
     else:
@@ -44,11 +42,11 @@ def get_info(bot, params=None, headers=None, show_url=True):
 
 @hook.command
 def imdb(text, bot):
-    """imdb <movie> - gets information about <movie> from IMDb"""
+    """<movie> - gets information about <movie> from IMDb"""
     params = {"i": text} if id_re.match(text) else {'t': text}
     headers = {"User-Agent": bot.user_agent}
 
-    return get_info(bot, params, headers)
+    return get_info(params, headers)
 
 
 @hook.regex(imdb_re)
@@ -58,4 +56,4 @@ def imdb_url(match, bot):
     params = {"i": imdb_id}
     headers = {"User-Agent": bot.user_agent}
 
-    return get_info(bot, params, headers, show_url=False)
+    return get_info(params, headers, show_url=False)

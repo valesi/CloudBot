@@ -39,7 +39,6 @@ License:
 import re
 from random import randint
 
-
 IRC_COLOUR_DICT = {
     "white": "00",
     "black": "01",
@@ -254,4 +253,4 @@ def _convert(string):
         elif formatting in IRC_FORMATTING_DICT:
             ret += get_format(formatting)
 
-    return ret.strip()
+    return ret

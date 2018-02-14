@@ -2,32 +2,51 @@
 
 import requests
 from bs4 import BeautifulSoup
+from sqlalchemy import Table, String, Column, select
 
 from cloudbot import hook
+from cloudbot.util import database
+
+table = Table(
+    'horoscope',
+    database.metadata,
+    Column('nick', String, primary_key=True),
+    Column('sign', String)
+)
 
 
-@hook.on_start()
-def init(db):
-    db.execute("create table if not exists horoscope(nick primary key, sign)")
+def get_sign(db, nick):
+    row = db.execute(select([table.c.sign]).where(table.c.nick == nick.lower())).fetchone()
+    if not row:
+        return None
+
+    return row[0]
+
+
+def set_sign(db, nick, sign):
+    res = db.execute(table.update().values(sign=sign.lower()).where(table.c.nick == nick.lower()))
+    if res.rowcount == 0:
+        db.execute(table.insert().values(nick=nick.lower(), sign=sign.lower()))
+
     db.commit()
 
 
 @hook.command(autohelp=False)
-def horoscope(text, db, bot, notice, nick):
-    """<sign> - get your horoscope"""
+def horoscope(text, db, bot, nick, notice, notice_doc, reply, message):
+    """[sign] - get your horoscope"""
     signs = {
-            'aries': '1',
-            'taurus': '2',
-            'gemini': '3',
-            'cancer': '4',
-            'leo': '5',
-            'virgo': '6',
-            'libra': '7',
-            'scorpio': '8',
-            'sagittarius': '9',
-            'capricorn': '10',
-            'aquarius': '11',
-            'pisces': '12'
+        'aries': '1',
+        'taurus': '2',
+        'gemini': '3',
+        'cancer': '4',
+        'leo': '5',
+        'virgo': '6',
+        'libra': '7',
+        'scorpio': '8',
+        'sagittarius': '9',
+        'capricorn': '10',
+        'aquarius': '11',
+        'pisces': '12'
     }
 
     headers = {'User-Agent': bot.user_agent}
@@ -39,18 +58,20 @@ def horoscope(text, db, bot, notice, nick):
     else:
         sign = text.strip().lower()
 
-    db.execute("create table if not exists horoscope(nick primary key, sign)")
-
     if not sign:
-        sign = db.execute("select sign from horoscope where "
-                          "nick=lower(:nick)", {'nick': nick}).fetchone()
+        sign = get_sign(db, nick)
         if not sign:
-            notice("horoscope <sign> -- Get your horoscope")
+            notice_doc()
             return
-        sign = sign[0].strip().lower()
+
+        sign = sign.strip().lower()
+
+    if sign not in signs:
+        notice("Unknown sign: {}".format(sign))
+        return
 
     params = {
-            "sign": signs[sign]
+        "sign": signs[sign]
     }
 
     url = "http://www.horoscope.com/us/horoscopes/general/horoscope-general-daily-today.aspx"
@@ -59,22 +80,15 @@ def horoscope(text, db, bot, notice, nick):
         request = requests.get(url, params=params, headers=headers)
         request.raise_for_status()
     except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as e:
-        return "Could not get horoscope: {}. URL Error".format(e)
+        reply("Could not get horoscope: {}. URL Error".format(e))
+        raise
 
     soup = BeautifulSoup(request.text)
 
     horoscope_text = soup.find("div", class_="horoscope-content").find("p").text
-    '''
-    if not horoscope_text:
-        return "Could not get the horoscope for {}. Hororscope text error".format(sign)
-    else:
-        horoscope_text = horoscope_text[0].text.strip()
-    '''
-    result = "[h1]{}[/h1] {}".format(text, horoscope_text)
+    result = "[h1]{}[/h1] {}".format(sign, horoscope_text)
 
     if text and not dontsave:
-        db.execute("insert or replace into horoscope(nick, sign) values (:nick, :sign)",
-                   {'nick': nick.lower(), 'sign': sign})
-        db.commit()
+        set_sign(db, nick, sign)
 
-    return result
+    message(result)

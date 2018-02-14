@@ -4,7 +4,6 @@ ebay.py
 Provides a command and URL parser for viewing eBay products.
 """
 
-import json
 import requests
 import re
 import time
@@ -12,7 +11,6 @@ import time
 from bs4 import BeautifulSoup
 
 from cloudbot import hook
-from cloudbot.util import formatting, web
 
 
 BASE_URL = 'http://www.ebay.{}/itm/{}'
@@ -46,42 +44,53 @@ def get_info(cc, item_id, show_url=False):
         pass
     # Kill extra whitespace
     i["title"] = " ".join(title.text.split())
-    out = "[h1]eBay:[/h1] {title}"
+    out = ["[h1]eBay:[/h1] {title}"]
 
     # Bid
     bid_price = body.find(id="prcIsum_bidPrice")
     if bid_price:
         i["bid_price"] = bid_price.text.strip()
-        out += " [div] [h1]Bid:[/h1] {bid_price}"
+        bid = "[h1]Bid:[/h1] {bid_price}"
+        foreign_price = body.find(id="convbidPrice")
+        try:
+            foreign_price.span.decompose()
+        except:
+            pass
+        if foreign_price:
+            i["bid_foreign_price"] = foreign_price.text.strip()
+            bid += " ({bid_foreign_price})"
+        out.append(bid)
+
+    buy = None
     # Discount Buy
     sale_price = body.find(id="mm-saleDscPrc")
     if sale_price:
-        i["sale_price"] = sale_price.text.strip()
-        out += " [div] [h1]Buy:[/h1] {sale_price} ($(red)Sale$(c))"
+        i["buy_price"] = sale_price.text.strip()
+        buy = "[h1]Buy:[/h1] {buy_price} ($(red)Sale$(c))"
     # Buy
     buy_price = body.find(id="prcIsum")
     if buy_price:
         i["buy_price"] = buy_price.text.strip()
-        out += " [div] [h1]Buy:[/h1] {buy_price}"
-    # Best offer
-    if body.find(id="boBtn_btn"):
-        out += " ($(green)OBO$(c))"
-
-    # Foreign price
-    foreign_price = body.find(id="convbinPrice")
-    try:
-        foreign_price.span.decompose()
-    except:
-        pass
-    if foreign_price:
-        i["foreign_price"] = foreign_price.text.strip()
-        out += " ({foreign_price})"
+        buy = "[h1]Buy:[/h1] {buy_price}"
+    if buy:
+        foreign_price = body.find(id="convbinPrice")
+        try:
+            foreign_price.span.decompose()
+        except:
+            pass
+        if foreign_price:
+            i["buy_foreign_price"] = foreign_price.text.strip()
+            buy += " ({buy_foreign_price})"
+        # Best offer
+        if body.find(id="boBtn_btn"):
+            buy += " ($(green)OBO$(c))"
+        out.append(buy)
 
     # Time left
     time_left = body.find(id="vi-cdown_timeLeft")
     if time_left:
         i["time_left"] = time_left.text.strip()
-        out += " [div] [h1]Ends:[/h1] {time_left}"
+        out.append("[h1]Ends:[/h1] {time_left}")
 
     # Free shipping (not sure if this is useful)
     #shipping = body.find(id="fshippingCost")
@@ -96,8 +105,8 @@ def get_info(cc, item_id, show_url=False):
     # Condition
     cond = body.find(id="vi-itm-cond")
     i["cond"] = cond.text.strip()
-    out += " [div] [h1]Cond:[/h1] {cond}"
-    
+    out.append("[h1]Cond:[/h1] {cond}")
+
     # Image
     image = body.find(id="icImg")
     if image and image["src"]:
@@ -112,25 +121,25 @@ def get_info(cc, item_id, show_url=False):
                 # "$_57.jpg" appears to be largest image
                 i["image"] = image["src"].replace(m.group(1), "57")
         # If m wasn't a match, maybe use src="viEnlargeImgLayer_img_ctr"
-        out += " [div] [h1]Image:[/h1] {image}"
+        out.append("[h1]Img:[/h1] {image}")
 
     ## Clean up
     # Remove cents if price is whole dollar etc
-    for price in ['bid_price', 'sale_price', 'buy_price', 'foreign_price', 'ship_cost']:
+    for price in ['bid_price', 'buy_price', 'bid_foreign_price', 'buy_foreign_price', 'ship_cost']:
         try:
             i[price] = i[price].replace(".00", "")
         except:
             pass
 
     if show_url:
-        out += " [div] [h3]{}".format(BASE_URL.format(cc, item_id))
+        out.append("[h3]{}".format(BASE_URL.format(cc, item_id)))
 
     # Kill any and all details' surrounding whitespace
     for k, v in i.items():
         i[k] = v.strip()
 
-    return out.format(**i)
-    
+    return " [div] ".join(out).format(**i)
+
 
 @hook.regex(ebay_re)
 def ebay_url(match):
@@ -142,7 +151,7 @@ def ebay_url(match):
 
 @hook.command()
 def ebay(text):
-    """ebay <product> - searches eBay for <product>"""
+    """<product> - searches eBay for <product>"""
     if text.isdigit():
         return get_info('com', text, show_url=True)
 
@@ -156,9 +165,9 @@ def ebay(text):
         return 'Search failed. Hmmm.'
 
     soup = BeautifulSoup(r.text)
-    listing = soup.find('ul', {'id':'ListViewInner'})
+    listing = soup.find('ul', {'id': 'ListViewInner'})
 
-    for tag in listing:
+    for tag in listing or []:
         if tag.name == 'li':
             return get_info('com', tag['listingid'], show_url=True)
     return 'Nothing?'

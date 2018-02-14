@@ -6,208 +6,249 @@ A plugin that uses the CoinMarketCap JSON API to get values for cryptocurrencies
 Created By:
     - Luke Rogers <https://github.com/lukeroge>
 
-Special Thanks:
-    - https://coinmarketcap-nexuist.rhcloud.com/
-
 License:
     GPL v3
 """
-from datetime import datetime
+from collections import defaultdict
+from datetime import datetime, timedelta
+from operator import itemgetter
+from threading import RLock
 
 import requests
+from requests import Session
+from yarl import URL
 
 from cloudbot import hook
+from cloudbot.util import web
 
 
-CMC_API_URL = "https://api.coinmarketcap.com/v1/ticker/"
-BA_API_URL = "https://apiv2.bitcoinaverage.com/indices/global/ticker/{}{}"
-GDAX_API_URL = "https://api.gdax.com/products/{}-USD/ticker"
-
-
-CURRENCY_SIGNS = {
-    "usd": "$",
-    "eur": "€",
-    "cny": "¥",
-    "gbp": "£",
-    "cad": "$",
-    "rub": "₽",
-    "hkd": "$",
-    "jpy": "¥",
-    "aud": "$",
-    "brl": "R$",
-    "inr": "₹",
-    "krw": "₩",
-    "mxn": "$",
-    "idr": "Rp",
-    "chf": "CHF",
-    "btc": "฿"  # Thai Baht
-#    "btc": "₿"  # official symbol in Unicode (\u20bf)
+CURRENCY_SYMBOLS = {
+    "USD": "$",
+    "EUR": "€",
+    "CNY": "¥",
+    "GBP": "£",
+    "CAD": "$",
+    "RUB": "₽",
+    "HKD": "$",
+    "JPY": "¥",
+    "AUD": "$",
+    "BRL": "R$",
+    "INR": "₹",
+    "KRW": "₩",
+    "MXN": "$",
+    "IDR": "Rp",
+    "CHF": "CHF",
+    "BTC": "฿"  # Thai Baht
+    #"BTC": "₿"  # official symbol in Unicode (\u20bf)
 }
 
 
-def format_output(coin, currency, price, change=None, avg_change=False, to_btc=None):
-    price = float(price)
-    out = []
-
-    if currency.lower() in CURRENCY_SIGNS:
-        out.append("{}{:,.2f}".format(CURRENCY_SIGNS[currency.lower()], price))
-    else:
-        out.append("{:,.2f} {}".format(price, currency.upper()))
-
-    if change:
-        change = float(change)
-        if change > 0:
-            change_str = "$(green){}%$(c)".format(change)
-        elif change < 0:
-            change_str = "$(red){}%$(c)".format(change)
-        else:
-            change_str = "{}%".format(change)
-        out.append("{} 24hr{}".format(change_str.format(change), " avg" if avg_change else ""))
-
-    if to_btc is not None:  # Could be 0.0
-        out.append("{:,.7f} BTC".format(float(to_btc)))
-
-    return "[h1]{}:[/h1] ".format(coin) + " [div] ".join(out)
+class APIError(Exception):
+    pass
 
 
-@hook.command("btcavg")
-def bitcoin_average(text):
-    """<coin> [currency] -- Gets the price of <coin> against [currency], defaulting to USD"""
-    args = text.upper().split()
-    coin = args.pop(0)
-
-    currency = args.pop(0) if args else "USD"
-
-    try:
-        response = requests.get(BA_API_URL.format(coin, currency))
-        response.raise_for_status()
-    except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as e:
-        if "for symbol is not valid for url" in str(e):
-            return "Invalid symbol: " + coin + currency
-        else:
-            return "Could not get value: {}".format(e)
-
-    data = response.json()
-
-    return format_output(coin, currency, data["last"], data["changes"]["percent"]["day"], True)
+class APIRateLimitError(APIError):
+    pass
 
 
+class TickerNotFound(APIError):
+    def __init__(self, name):
+        self.currency = name
+
+
+class CurrencyConversionError(APIError):
+    def __init__(self, in_name, out_name):
+        self.in_name = in_name
+        self.out_name = out_name
+
+
+class CMCApi:
+    def __init__(self, user_agent=None, url="https://api.coinmarketcap.com/v1"):
+        self.url = URL(url)
+        self._request_times = []
+
+        self._cache = defaultdict(dict)
+        self._lock = RLock()
+        self._now = datetime.now()
+
+        self._session = Session()
+
+        self.set_user_agent(user_agent)
+
+    def set_user_agent(self, user_agent=None):
+        if user_agent is None:
+            user_agent = requests.utils.default_user_agent()
+
+        with self._lock:
+            self._session.headers['User-Agent'] = user_agent
+
+    def close(self):
+        self._session.close()
+
+    def _request(self, endpoint, params=None):
+        self._request_times[:] = [t for t in self._request_times if (self._now - t) < timedelta(minutes=1)]
+        if len(self._request_times) > 10:
+            raise APIRateLimitError
+
+        with self._session.get(self.url / endpoint, params=params) as response:
+            self._request_times.append(self._now)
+            response.raise_for_status()
+            return response.json()
+
+    def _update(self, key, obj):
+        old_obj = self._cache[key.lower()]
+        if old_obj.get("last_updated") != obj["last_updated"]:
+            old_obj.clear()
+
+        old_obj.update(obj)
+
+    def _handle_obj(self, *objs):
+        with self._lock:
+            for obj in objs:
+                self._update(obj["id"], obj)
+                self._update(obj["symbol"], obj)
+
+    def _get_currency_data(self, id_or_symbol, out_currency="USD"):
+        self._now = datetime.now()
+        old_data = self._cache[id_or_symbol.lower()]
+        _id = old_data.get("id", id_or_symbol)
+        last_updated = datetime.fromtimestamp(float(old_data.get('last_updated', "0")))
+        diff = self._now - last_updated
+        price_key = "price_" + out_currency.lower()
+        if diff > timedelta(minutes=5) or price_key not in old_data:
+            responses = self._request("ticker/" + _id.lower(), params={'limit': 0, 'convert': out_currency})
+            self._handle_obj(*responses)
+            data = self._cache[id_or_symbol.lower()]
+            last_updated = datetime.fromtimestamp(float(data.get('last_updated', "0")))
+            diff = self._now - last_updated
+            if diff > timedelta(days=2):
+                raise TickerNotFound(id_or_symbol)
+            elif price_key not in data:
+                raise CurrencyConversionError(data["symbol"], out_currency)
+
+            return self._cache[id_or_symbol.lower()]
+
+        return old_data
+
+    def update_cache(self):
+        with self._lock:
+            self._now = datetime.now()
+            data = self._request("ticker", params={'limit': 0})
+            self._handle_obj(*data)
+
+    def get_currency_data(self, id_or_symbol, out_currency="USD"):
+        with self._lock:
+            data = self._get_currency_data(id_or_symbol, out_currency)
+            return data
+
+    @property
+    def currencies(self):
+        return self._cache.values()
+
+
+api = CMCApi()
+
+
+class Alias:
+    __slots__ = ("name", "cmds")
+
+    def __init__(self, name, *cmds):
+        self.name = name
+        if name not in cmds:
+            cmds = (name,) + cmds
+
+        self.cmds = cmds
+
+
+ALIASES = (
+    Alias('bitcoin', 'btc'),
+    Alias('bitcoincash', 'bch'),
+    Alias('litecoin', 'ltc'),
+    Alias('dogecoin', 'doge'),
+    Alias('ethereum', 'eth'),
+    Alias('monero', 'xmr'),
+    Alias('zcash', 'zec'),
+)
+
+
+def alias_wrapper(alias):
+    def func(text, reply):
+        return crypto_command(" ".join((alias.name, text)), reply)
+
+    func.__doc__ = """- Returns the current {} value""".format(alias.name)
+    func.__name__ = alias.name + "_alias"
+
+    return func
+
+
+def init_aliases():
+    for alias in ALIASES:
+        _hook = alias_wrapper(alias)
+        globals()[_hook.__name__] = hook.command(*alias.cmds, autohelp=False)(_hook)
+
+
+@hook.onload
+@hook.periodic(3600)
+def update_cache(bot):
+    api.set_user_agent(bot.user_agent)
+    api.update_cache()
+
+
+@hook.on_unload
+def close_api():
+    api.close()
+
+
+# main command
 @hook.command("cryptocurrency", "cmc", "crypto")
-def coinmarketcap(text):
-    """<ticker> [currency] -- Returns current value of a cryptocurrency. [currency] defaults to USD."""
-    args = text.lower().split()
-    coin = args.pop(0)
+def crypto_command(text, reply):
+    """<ticker> [currency] - Returns current value of a cryptocurrency"""
+    args = text.split()
+    ticker = args.pop(0)
 
-    currency = args.pop(0) if args else "usd"
-    params = {}
-    if currency is not "usd":
-        params["convert"] = currency.upper()
-
-    try:
-        response = requests.get(CMC_API_URL, params=params)
-        response.raise_for_status()
-    except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as e:
-        return "Could not get value: {}".format(e)
-
-    data = response.json()
-
-    if "error" in data:
-        return data["error"]
-
-    # Find the symbol
-    for ccoin in data:
-        if ccoin["symbol"] == coin.upper() or ccoin["id"] == coin:
-            if "price_{}".format(currency) not in ccoin:
-                return "Cannot convert to currency: " + currency
-            return format_output(ccoin["symbol"], currency, ccoin["price_{}".format(currency)], ccoin["percent_change_24h"],
-                                 to_btc=float(ccoin["price_btc"]))
-
-    return "Coin not found"
-
-
-
-@hook.command()
-def gdax(text):
-    """<coin> -- Gets the current GDAX USD price for <coin>."""
-    coin = text.upper() if text else "BTC"
+    if not args:
+        currency = 'USD'
+    else:
+        currency = args.pop(0).upper()
 
     try:
-        response = requests.get(GDAX_API_URL.format(coin))
-        response.raise_for_status()
-    except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as e:
-        return "Could not get value: {}".format(e)
+        data = api.get_currency_data(ticker, currency)
+    except TickerNotFound as e:
+        return "Unable to find ticker for '{}'".format(e.currency)
+    except CurrencyConversionError as e:
+        return "Unable to convert '{}' to '{}'".format(e.in_name, e.out_name)
+    except APIRateLimitError:
+        return "API rate limit reached, please try again later"
 
-    data = response.json()
+    out = []
+    price = float(data['price_' + currency.lower()])
 
-    if "message" in data:
-        return data["message"]
+    if currency in CURRENCY_SYMBOLS:
+        out.append("{}{:,.2f}".format(CURRENCY_SYMBOLS[currency], price))
+    else:
+        out.append("{:,.2f} {}".format(price, currency))
 
-    return format_output(coin, "USD", data["price"])
+    change = float(data['percent_change_24h'])
+    if change > 0:
+        change_str = "$(green){}%$(c)".format(change)
+    elif change < 0:
+        change_str = "$(red){}%$(c)".format(change)
+    else:
+        change_str = "0%"
+    out.append("{} 24hr avg".format(change_str.format(change)))
 
-
-# aliases
-@hook.command("bitcoin", "btc", autohelp=False)
-def bitcoin(text):
-    """ -- Returns current Bitcoin value """
-    return bitcoin_average("btc " + text)
-
-
-@hook.command("bitcoincash", "bch", autohelp=False)
-def bitcoincash(text):
-    """ -- Returns current Bitcoin Cash value """
-    return coinmarketcap("bch " + text)
-
-
-@hook.command("ethereum", "eth", autohelp=False)
-def ethereum(text):
-    """ -- Returns current Ethereum value """
-    return bitcoin_average("eth " + text)
+    return "[h1]{}:[/h1] ".format(data['symbol']) + " [div] ".join(out)
 
 
-@hook.command("ethereum_classic", "etc", autohelp=False)
-def ethereum_classic(text):
-    """ -- Returns current Ethereum Classic value """
-    return coinmarketcap("etc " + text)
+@hook.command("currencies", "currencylist", autohelp=False)
+def currency_list():
+    currencies = sorted(set((obj["symbol"], obj["id"]) for obj in api.currencies), key=itemgetter(0))
+    lst = [
+        '{: <10} {}'.format(symbol, name) for symbol, name in currencies
+    ]
+    lst.insert(0, 'Symbol     Name')
+
+    return "Available currencies: " + web.paste('\n'.join(lst))
 
 
-@hook.command("litecoin", "ltc", autohelp=False)
-def litecoin(text):
-    """ -- Returns current Litecoin value """
-    return bitcoin_average("ltc " + text)
-
-
-@hook.command("nem", "xem", autohelp=False)
-def nemcoin(text):
-    """ -- Returns current NEM value """
-    return coinmarketcap("xem " + text)
-
-
-@hook.command("ripple", "xrp", autohelp=False)
-def ripple(text):
-    """ -- Returns current Ripple value """
-    return coinmarketcap("xrp " + text)
-
-
-@hook.command("dash", autohelp=False)
-def dash(text):
-    """ -- Returns current Dash value """
-    return coinmarketcap("dash " + text)
-
-
-@hook.command("monero", "xmr", autohelp=False)
-def monero(text):
-    """ -- Returns current Monero value """
-    return coinmarketcap("xmr " + text)
-
-
-@hook.command("dogecoin", "doge", autohelp=False)
-def dogecoin(text):
-    """ -- Returns current dogecoin value """
-    return coinmarketcap("doge " + text)
-
-
-@hook.command("zcash", "zec", autohelp=False)
-def zcash(text):
-    """ -- Returns current Zcash value """
-    return bitcoin_average("zec " + text)
-
+init_aliases()

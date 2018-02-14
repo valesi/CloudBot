@@ -1,6 +1,6 @@
 import re
-import requests
 
+import requests
 from bs4 import BeautifulSoup
 
 from cloudbot import hook
@@ -37,7 +37,7 @@ def xkcd_url(match):
 
 @hook.command()
 def xkcd(text):
-    """xkcd [search] - Get a random comic, otherwise search for xkcd comic matching [search]"""
+    """[search] - Get a random comic, otherwise search for xkcd comic matching [search]"""
     # Pull a random comic
     if not text:
         # Get latest number

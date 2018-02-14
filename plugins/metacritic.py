@@ -7,7 +7,7 @@ from cloudbot import hook
 
 
 @hook.command("metacritic", "mc")
-def metacritic(text):
+def metacritic(text, reply):
     """[all|movie|tv|album|x360|ps3|pc|gba|ds|3ds|wii|vita|wiiu|xone|ps4] <title> - gets rating for <title> from
      metacritic on the specified medium"""
 
@@ -39,14 +39,15 @@ def metacritic(text):
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, '
                       'like Gecko) Chrome/41.0.2228.0 Safari/537.36',
-        'Referer':  'http://www.metacritic.com/'
+        'Referer': 'http://www.metacritic.com/'
     }
 
     try:
         request = requests.get(url, headers=headers)
         request.raise_for_status()
     except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as e:
-        return "Could not get Metacritic info: {}".format(e)
+        reply("Could not get Metacritic info: {}".format(e))
+        raise
 
     doc = html.fromstring(request.text)
 

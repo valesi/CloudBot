@@ -1,9 +1,9 @@
-import re
+import html
 import random
+import re
 from datetime import datetime
 
 import tweepy
-from html.parser import HTMLParser
 
 from cloudbot import hook
 from cloudbot.util import timeformat
@@ -49,7 +49,7 @@ def format_tweet(tweet):
     user = tweet.user
 
     # Format the return the text of the tweet
-    text = HTMLParser().unescape(" ".join(tweet.full_text.split()))
+    text = html.unescape(" ".join(tweet.full_text.split()))
 
     # Get expanded URLs
     urls = {}
@@ -166,8 +166,8 @@ def twitter(text):
 
 
 @hook.command("twuser", "twinfo")
-def twuser(text):
-    """twuser <user> -- Get info on the Twitter user <user>"""
+def twuser(text, reply):
+    """<user> - Get info on the Twitter user <user>"""
 
     if not tw_api:
         return

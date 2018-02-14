@@ -11,19 +11,19 @@ License:
 """
 
 import json
-import requests
 import re
+
+import requests
 
 from cloudbot import hook
 from cloudbot.util import formatting, web
 
-
 # CONSTANTS
 
-ITEM_URL = "http://www.newegg.{}/Product/Product.aspx?Item={}"
+ITEM_URL = "https://www.newegg.com/Product/Product.aspx?Item={}"
 
-API_PRODUCT = "http://www.ows.newegg.{}/Products.egg/{}/Detail"
-API_SEARCH = "http://www.ows.newegg.com/Search.egg/Advanced"
+API_PRODUCT = "https://www.ows.newegg.com/Products.egg/{}"
+API_SEARCH = "https://www.ows.newegg.com/Search.egg/Advanced"
 
 NEWEGG_RE = re.compile(r"(?:(?:www\.newegg\.(com|ca))(?:/global/(?:\w+))?/Product/Product\.aspx\?Item=)([-_a-zA-Z0-9]+)", re.I)
 
@@ -92,9 +92,9 @@ def newegg_url(match):
         return "Failed to get info: " + str(ex)
 
 
-@hook.command()
-def newegg(text):
-    """newegg <item name> - searches newegg.com for <item name>"""
+# @hook.command()
+def newegg(text, admin_log, reply):
+    """<item name> - searches newegg.com for <item name>"""
 
     # form the search request
     request = {
@@ -114,8 +114,16 @@ def newegg(text):
 
     r = request.json()
 
-    if r.get("Message", False):
-        return "Newegg Error: {Message} ({ExceptionMessage})". format(**r)
+    if not request.ok:
+        if r.get("Message"):
+            msg = "{ExceptionMessage}\n{ExceptionType}\n{StackTrace}".format(**r).replace("\r", "")
+            url = web.paste(msg)
+            admin_log("Newegg API Error: {ExceptionType}: {url}".format(url=url, **r))
+            return "Newegg Error: {Message} (\x02{code}\x02)".format(code=request.status_code, **r)
+        else:
+            reply("Unknown error occurred.")
+            request.raise_for_status()
+            return
 
     # get the first result
     if r["ProductListItems"]:

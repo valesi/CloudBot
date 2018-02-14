@@ -6,7 +6,7 @@ import requests
 
 from cloudbot import hook
 from cloudbot.util import timeformat
-from cloudbot.util.formatting import pluralize
+from cloudbot.util.formatting import pluralize_auto
 
 
 youtube_re = re.compile(r'(?:youtube.*?(?:v=|/v/)|youtu\.be/|yooouuutuuube.*?id=)([-_a-zA-Z0-9]+)', re.I)
@@ -89,7 +89,7 @@ def get_video_description(video_id, show_url=False):
 
 @hook.command("youtube", "you", "yt", "y")
 def youtube(text):
-    """youtube <query> -- Returns the first YouTube search result for <query>."""
+    """<query> - Returns the first YouTube search result for <query>."""
     if not dev_key:
         return "This command requires a Google Developers Console API key."
 
@@ -103,7 +103,7 @@ def youtube(text):
 
     if json['pageInfo']['totalResults'] == 0:
         return 'No results found.'
-    
+
     video_id = json['items'][0]['id']['videoId']
 
     return get_video_description(video_id, show_url=True)
@@ -111,7 +111,7 @@ def youtube(text):
 
 @hook.command("youtime", "ytime")
 def youtime(text):
-    """youtime <query> -- Gets the total run time of the first YouTube search result for <query>."""
+    """<query> - Gets the total run time of the first YouTube search result for <query>."""
     if not dev_key:
         return "This command requires a Google Developers Console API key."
 

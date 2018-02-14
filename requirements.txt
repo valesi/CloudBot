@@ -10,11 +10,11 @@ lxml
 beautifulsoup4
 feedparser
 requests
-psutil
 requests-oauthlib
+psutil
 tweepy
 pyenchant
 imgurpython
 isodate
 dnspython3
-googlefinance
+yarl

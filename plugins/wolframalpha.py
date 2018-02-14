@@ -3,6 +3,7 @@ import urllib.parse
 
 import requests
 from lxml import etree
+from requests import HTTPError
 
 from cloudbot import hook
 from cloudbot.util import web, formatting
@@ -36,6 +37,12 @@ def wolframalpha(text, message):
     }
     request = requests.get(api_url, params=params)
     url = query_url.format(urllib.parse.quote_plus(text))
+
+    try:
+        request.raise_for_status()
+    except HTTPError as e:
+        reply("Error getting query: {}".format(e.response.status_code))
+        raise
 
     if request.status_code != requests.codes.ok:
         return "WA error: {} [div] {}".format(request.status_code, url)

@@ -28,14 +28,15 @@ HEADERS = {'Accept-Language': 'en-US'}
 
 
 @hook.command("pre", "scene")
-def pre(text):
-    """pre <query> -- searches scene releases using pre.corrupt.org"""
+def pre(text, reply):
+    """<query> - searches scene releases using orlydb.com"""
 
     try:
         request = requests.get("https://pre.corrupt-net.org/search.php", params={"search": text}, headers=HEADERS, timeout=30.0)
         request.raise_for_status()
     except requests.exceptions.HTTPError as e:
-        return 'Unable to fetch results: {}'.format(e)
+        reply('Unable to fetch results: {}'.format(e))
+        raise
 
     request.close()
     html = BeautifulSoup(request.text, "lxml")
@@ -55,4 +56,3 @@ def pre(text):
     since = timeformat.time_since(date, datetime.utcnow(), simple=True)
 
     return '{} [div] {} [div] {} [div] {} ({} ago)'.format(name, size, files, date, since)
-

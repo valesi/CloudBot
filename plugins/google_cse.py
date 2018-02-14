@@ -11,8 +11,6 @@ License:
     GNU General Public License (Version 3)
 """
 
-
-
 import requests
 
 from cloudbot import hook

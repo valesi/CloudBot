@@ -1,21 +1,45 @@
-from datetime import datetime
-import asyncio
-import functools
 import html
-import re
 import random
-import urllib.parse
+import re
+from datetime import datetime
 
 import requests
+from yarl import URL
 
 from cloudbot import hook
 from cloudbot.util import timeformat, formatting
 
+reddit_re = re.compile(
+    r"""
+    https? # Scheme
+    ://
 
-reddit_re = re.compile(r'.*(((www\.)?reddit\.com/r|redd\.it)[^ ]+)[/.\?]', re.I)
+    # Domain
+    (?:
+        redd\.it|
+        (?:www\.)?reddit\.com/r
+    )
 
-base_url = "https://reddit.com/r/{}/.json"
+    (?:/(?:[A-Za-z0-9!$&-.:;=@_~\u00A0-\u10FFFD]|%[A-F0-9]{2})*)*  # Path
+
+    (?:\?(?:[A-Za-z0-9!$&-;=@_~\u00A0-\u10FFFD]|%[A-F0-9]{2})*)?  # Query
+    """,
+    re.IGNORECASE | re.VERBOSE
+)
+
+base_url = "https://reddit.com/r/{}"
 short_url = "https://redd.it/{}"
+
+
+def api_request(url, bot):
+    """
+    :type url: yarl.URL
+    :type bot: cloudbot.bot.CloudBot
+    """
+    url = url.with_query("").with_scheme("https") / ".json"
+    r = requests.get(str(url), headers={'User-Agent': bot.user_agent})
+    r.raise_for_status()
+    return r.json()
 
 
 def format_output(item, show_url=False):
@@ -38,8 +62,8 @@ def format_output(item, show_url=False):
     raw_time = datetime.fromtimestamp(int(item["created_utc"]))
     item["timesince"] = timeformat.time_since(raw_time, count=1, simple=True)
 
-    item["comments"] = formatting.pluralize(item["num_comments"], 'comment').replace(",", "")
-    item["points"] = formatting.pluralize(item["score"], 'point').replace(",", "")
+    item["comments"] = formatting.pluralize_auto(item["num_comments"], 'comment').replace(",", "")
+    item["points"] = formatting.pluralize_auto(item["score"], 'point').replace(",", "")
 
     out = []
 
@@ -56,79 +80,68 @@ def format_output(item, show_url=False):
     out.extend(["/r/{subreddit}", "/u/{author}", "{timesince} ago", "{points}", "{comments}"])
 
     if item["gilded"]:
-        item["gilded"] = formatting.pluralize(item["gilded"], 'gild')
+        item["gilded"] = formatting.pluralize_auto(item["gilded"], 'gild')
         out.append("$(yellow){gilded}$(c)")
 
     return "[h1]Reddit:[/h1] " + " [div] ".join(out).format(**item)
 
 
-@hook.regex(reddit_re)
+@hook.regex(reddit_re, singlethread=True)
 def reddit_url(match, bot):
-    url = match.group(1)
-    if "redd.it" in url:
-        url = "https://" + url
-        response = requests.get(url)
-        url = response.url + ".json"
-    if not urllib.parse.urlparse(url).scheme:
-        url = "https://" + url + ".json"
+    url = match.group()
+    url = URL(url).with_scheme("https")
 
-    # the reddit API gets grumpy if we don't include headers
-    headers = {'User-Agent': bot.user_agent}
-    r = requests.get(url, headers=headers)
-    if r.status_code != 200:
-        return "HTTP {}".format(r.status_code)
+    if url.host.endswith("redd.it"):
+        response = requests.get(url, headers={'User-Agent': bot.user_agent})
+        if response.status_code != requests.codes.ok:
+            return "HTTP {}".format(response.status_code)
+        url = URL(response.url).with_scheme("https")
 
-    data = r.json()
-    if type(data) == list:
+    data = api_request(url, bot)
+    if isinstance(data, list):
         item = data[0]["data"]["children"][0]["data"]
-    elif type(data) == dict:
+    #elif isinstance(data, dict):
         #item = data["data"]["children"][random.randint(0,9)]["data"]
-        return
+        #return
 
     return format_output(item)
 
 
-@asyncio.coroutine
-@hook.command(autohelp=False)
-def reddit(text, bot, loop):
-    """<subreddit> [n] - gets a random post from <subreddit>, or gets the [n]th post in the subreddit"""
+@hook.command(autohelp=False, singlethread=True)
+def reddit(text, bot, reply):
+    """[subreddit] [n] - gets a random post from <subreddit>, or gets the [n]th post in the subreddit"""
     id_num = None
-    headers = {'User-Agent': bot.user_agent}
 
     if text:
         # clean and split the input
         parts = text.lower().strip().split()
+        url = base_url.format(parts.pop(0).strip())
 
         # find the requested post number (if any)
-        if len(parts) > 1:
-            url = base_url.format(parts[0].strip())
+        if parts:
             try:
-                id_num = int(parts[1]) - 1
+                id_num = int(parts[0]) - 1
             except ValueError:
                 return "Invalid post number."
-        else:
-            url = base_url.format(parts[0].strip())
     else:
-        url = "https://reddit.com/.json"
+        url = "https://reddit.com"
 
     try:
-        # Again, identify with Reddit using an User Agent, otherwise get a 429
-        inquiry = yield from loop.run_in_executor(None, functools.partial(requests.get, url, headers=headers))
-        if inquiry.status_code != 200:
-            return "r/{} either does not exist or is private.".format(text)
-        data = inquiry.json()
+        data = api_request(URL(url), bot)
     except Exception as e:
-        return "Error: " + str(e)
+        reply("Error: " + str(e))
+        raise
+
     data = data["data"]["children"]
 
     # get the requested/random post
     if id_num is not None:
         try:
-            item = data[id_num]["data"]
+            item = data[id_num]
         except IndexError:
             length = len(data)
             return "Invalid post number. Number must be between 1 and {}.".format(length)
     else:
-        item = random.choice(data)["data"]
+        item = random.choice(data)
 
-    return format_output(item, show_url=True)
+    return format_output(item["data"], show_url=True)

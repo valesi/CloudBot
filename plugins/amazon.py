@@ -1,6 +1,8 @@
-import requests
 import re
+
+import requests
 from bs4 import BeautifulSoup
+from requests import HTTPError
 
 from cloudbot import hook
 from cloudbot.util import web, formatting
@@ -15,14 +17,14 @@ AMAZON_RE = re.compile(""".*ama?zo?n\.(com|co\.uk|com\.au|de|fr|ca|cn|es|it)/.*/
 
 
 @hook.regex(AMAZON_RE)
-def amazon_url(match):
+def amazon_url(match, reply):
     cc = match.group(1)
     asin = match.group(2)
-    return amazon(asin, _parsed=cc)
+    return amazon(asin, reply, _parsed=cc)
 
 
 @hook.command("amazon", "az", "amzn")
-def amazon(text, _parsed=False):
+def amazon(text, reply, _parsed=False):
     """<query> -- Searches Amazon for query"""
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, '
@@ -38,6 +40,12 @@ def amazon(text, _parsed=False):
         request = requests.get(SEARCH_URL.format(_parsed), params=params, headers=headers)
     else:
         request = requests.get(SEARCH_URL.format(REGION), params=params, headers=headers)
+
+    try:
+        request.raise_for_status()
+    except HTTPError:
+        reply("Amazon API error occurred.")
+        raise
 
     soup = BeautifulSoup(request.text)
 
@@ -87,7 +95,7 @@ def amazon(text, _parsed=False):
     try:
         # get the rating
         rating = item.find('i', {'class': 'a-icon-star'}).find('span', {'class': 'a-icon-alt'}).text
-        rating = re.search(r"([0-9]+(?:(?:\.|,)[0-9])?).*5", rating).group(1).replace(",", ".")
+        rating = re.search(r"([0-9]+(?:[.,][0-9])?).*5", rating).group(1).replace(",", ".")
         # get the rating count
         pattern = re.compile(r"(product-reviews|#customerReviews)")
         num_ratings = item.find('a', {'href': pattern}).text.replace(".", ",")
