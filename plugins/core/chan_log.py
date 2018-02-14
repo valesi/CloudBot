@@ -13,9 +13,10 @@ def _dump_attrs(obj):
 
 
 @hook.post_hook
-def on_hook_end(error, launched_hook, launched_event, admin_log):
+def on_hook_end(bot, error, launched_hook, launched_event, admin_log):
     should_broadcast = True
     if error is not None:
+        paste = bot.config.get("paste_exceptions", False)
         messages = [
             "Error occurred in {}.{}".format(launched_hook.plugin.title, launched_hook.function_name)
         ]
@@ -27,37 +28,39 @@ def on_hook_end(error, launched_hook, launched_event, admin_log):
         except Exception as e:
             messages.append("Error occurred while formatting error {}: {}".format(type(e), e))
         else:
+            if paste:
+                try:
+                    url = web.paste('\n'.join(lines))
+                    messages.append("Traceback: " + url)
+                except Exception as e:
+                    messages.append("Error occurred while gathering traceback {}: {}".format(type(e), e))
+
+        if paste:
             try:
+                lines = ["{} = {}".format(k, v) for k, v in _dump_attrs(launched_event)]
+                exc_type, exc, exc_tb = error
+
+                lines.append("")
+                lines.append("Error data:")
+                lines.extend("{} = {}".format(k, v) for k, v in _dump_attrs(exc))
+
+                if isinstance(exc, RequestException):
+                    if exc.request is not None:
+                        req = exc.request
+                        lines.append("")
+                        lines.append("Request Info:")
+                        lines.extend("{} = {}".format(k, v) for k, v in _dump_attrs(req))
+
+                    if exc.response is not None:
+                        response = exc.response
+                        lines.append("")
+                        lines.append("Response Info:")
+                        lines.extend("{} = {}".format(k, v) for k, v in _dump_attrs(response))
+
                 url = web.paste('\n'.join(lines))
-                messages.append("Traceback: " + url)
+                messages.append("Event: " + url)
             except Exception as e:
-                messages.append("Error occurred while gathering traceback {}: {}".format(type(e), e))
-
-        try:
-            lines = ["{} = {}".format(k, v) for k, v in _dump_attrs(launched_event)]
-            exc_type, exc, exc_tb = error
-
-            lines.append("")
-            lines.append("Error data:")
-            lines.extend("{} = {}".format(k, v) for k, v in _dump_attrs(exc))
-
-            if isinstance(exc, RequestException):
-                if exc.request is not None:
-                    req = exc.request
-                    lines.append("")
-                    lines.append("Request Info:")
-                    lines.extend("{} = {}".format(k, v) for k, v in _dump_attrs(req))
-
-                if exc.response is not None:
-                    response = exc.response
-                    lines.append("")
-                    lines.append("Response Info:")
-                    lines.extend("{} = {}".format(k, v) for k, v in _dump_attrs(response))
-
-            url = web.paste('\n'.join(lines))
-            messages.append("Event: " + url)
-        except Exception as e:
-            messages.append("Error occurred while gathering error data {}: {}".format(type(e), e))
+                messages.append("Error occurred while gathering error data {}: {}".format(type(e), e))
 
         for message in messages:
             admin_log(message, should_broadcast)

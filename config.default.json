@@ -108,6 +108,7 @@
         "yandex_translate": ""
     },
     "database": "sqlite:///cloudbot.db",
+    "paste_exceptions": false,
     "plugin_loading": {
         "blacklist": [
             "dogpile",
