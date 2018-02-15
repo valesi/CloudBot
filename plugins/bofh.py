@@ -17,6 +17,6 @@ def load_lines(bot):
 
 @hook.command(autohelp=False)
 def bofh():
-    """The wise words of the Bachelor Operator From Hell"""
+    """- The wise words of the Bachelor Operator From Hell"""
     return random.choice(bofh)
 

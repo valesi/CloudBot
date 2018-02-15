@@ -14,5 +14,5 @@ def load_dogfacts(bot):
 
 @hook.command(autohelp=False)
 def dogs():
-    """Dog facts!"""
+    """- Dog facts!"""
     return random.choice(dogfacts)

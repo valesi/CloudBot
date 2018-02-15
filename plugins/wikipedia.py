@@ -27,7 +27,7 @@ def wiki(text):
 
 @hook.command(autohelp=False)
 def wikirand():
-    """Gets a random Wikipedia article."""
+    """- Gets a random Wikipedia article."""
     params = {"action": "query", "list": "random", "rnnamespace": "0", "format": "json"}
     try:
         request = requests.get(api_url, params=params)

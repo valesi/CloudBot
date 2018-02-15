@@ -29,5 +29,5 @@ def catgifs(reply, bot):
 
 @hook.command(autohelp=False)
 def catpic(reply, bot):
-    """gets a fucking cat pic."""
+    """- gets a fucking cat pic."""
     return "Kitty! " + get_data("http://thecatapi.com/api/images/get", reply, bot, params={"type": "jpg,png"}).url
