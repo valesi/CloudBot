@@ -1,41 +1,33 @@
 # CloudBot
 
-CloudBot is a simple, fast, expandable open-source Python IRC Bot!
+CloudBot is a simple, fast, expandable, and open-source Python IRC Bot!
 
 ## Getting CloudBot
 
-There are currently four different branches of this repository, each with a different level of stability:
- - **gonzobot** *(stable)*: This branch contains everything in the **master** branch plus additional plugins added for Snoonet IRC. This branch is the currently maintained branch which will also contain many fixes for various bugs from the master branch.
- - **gonzobot-dev** *(unstable)*: This branch is based off of the **gonzobot** branch and includes new plugins that are not fully tested.
- - **master** *(stable (old))*: This branch contains stable, tested code. This branch is based directly on the upstream master branch and is not currently maintained.
- - **python3.4** *(unstable (old))*: This is the outdated testing branch from the upstream repo.
-
-New releases will be pushed from **python3.4** to **master** whenever we have a stable version to release. These changes will be merged into **gonzobot** then deployed. This should happen on a fairly regular basis, so you'll never be too far behind the latest improvements.
+There are currently two branches in this repository:
+ - **unfinity** *(stable)*: master branch; contains everything in the **gonzobot** branch plus extra customizations like theming and running suppressed regex events.
+ - **gonzobot** *(stable)*: mirrors **[/edwardslabs/CloudBot/gonzobot](https://github.com/edwardslabs/CloudBot)**
 
 ## Installing CloudBot
 
-Firstly, CloudBot will only run on **Python 3.4 or higher**. Because we use the asyncio module, you will not be able to use any other versions of Python.
+Firstly, CloudBot will only run on **Python 3.5 or higher** for asyncio and other modules.
 
-To install CloudBot on *nix (linux, etc), see [here](https://github.com/CloudBotIRC/CloudBot/wiki/Installing-on-*nix)
-
-To install CloudBot on Windows, see [here](https://github.com/CloudBotIRC/CloudBot/wiki/Installing-on-Windows)
-
+Clone the repository and install requirements on [*nix](https://github.com/CloudBotIRC/CloudBot/wiki/Installing-on-*nix) or [Windows](https://github.com/CloudBotIRC/CloudBot/wiki/Installing-on-Windows), replacing `CloudBotIRC/CloudBot` with `valesi/CloudBot`.
 
 ### Running CloudBot
 
-Before you run the bot, rename `config.default.json` to `config.json` and edit it with your preferred settings. You can check if your JSON is valid using [jsonlint.com](http://jsonlint.com/)!
+Before you run the bot, copy `config.default.json` to `config.json` and edit it with your preferred settings. You can check if your JSON is valid using [jsonlint.com](http://jsonlint.com/)!
 
-Once you have installed the required dependencies and renamed the config file, you can run the bot! Make sure you are in the correct folder and run the following command:
+Once you have installed the required dependencies and renamed the config file, you can run the bot! Make sure you are in the root folder of the project:
 
 ```
-python3.4 -m cloudbot
+python3 -m cloudbot
 ```
 
-Note that you can also run the `cloudbot/__main__.py` file directly, which will work from any directory.
+You can also run the `cloudbot/__main__.py` file directly, which will work from any directory.
 ```
-python3.4 CloudBot/cloudbot/__main__.py
+python3 /path/to/repository/cloudbot/__main__.py
 ```
-Specify the path as /path/to/repository/cloudbot/__main__.py, where `cloudbot` is inside the repository directory.
 
 ## Getting help with CloudBot
 
@@ -49,7 +41,7 @@ More at the [Wiki Main Page](https://github.com/CloudBotIRC/CloudBot/wiki).
 
 ### Support
 
-The developers reside in [#CloudBot](irc://irc.esper.net/cloudbot) on [EsperNet](http://esper.net) and would be glad to help you.
+This fork is maintained by Selavi on Freenode and EFnet, and the upstream developers reside in [#CloudBot](irc://irc.esper.net/cloudbot) on [EsperNet](http://esper.net).
 
 If you think you have found a bug/have a idea/suggestion, please **open a issue** here on Github and contact us on IRC!
 
@@ -59,7 +51,7 @@ You can find a number of example bots in [#CloudBot](irc://irc.esper.net/cloudbo
 
 ## Changelog
 
-See [CHANGELOG.md](https://github.com/CloudBotIRC/CloudBot/blob/master/CHANGELOG.md)
+See [CHANGELOG.md](https://github.com/valesi/CloudBot/blob/master/CHANGELOG.md)
 
 ## License
 

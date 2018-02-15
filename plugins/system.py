@@ -14,14 +14,9 @@ import cloudbot
 
 
 @hook.command("about", "version", autohelp=False)
-def about(text, conn):
-    """- Gives information about CloudBot. Use .about license for licensing information"""
-    if text.lower() in ("license", "gpl", "source"):
-        return "CloudBot Refresh is released under the GPL v3 license, get the source code " \
-               "at https://github.com/valesi/CloudBot/"
-
-    return "{} is powered by CloudBot Refresh! ({}) - " \
-           "https://github.com/valesi/CloudBot/".format(conn.nick, cloudbot.__version__)
+def about():
+    """- Gives name, version, license, and source code of CloudBot."""
+    return "CloudBot v{} (unfinity) [div] https://github.com/valesi/CloudBot/ [div] GPLv3".format(cloudbot.__version__)
 
 
 @hook.command(autohelp=False)
