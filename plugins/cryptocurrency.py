@@ -150,24 +150,26 @@ api = CMCApi()
 
 
 class Alias:
-    __slots__ = ("name", "cmds")
+    __slots__ = ("name", "pretty_name", "cmds")
 
-    def __init__(self, name, *cmds):
+    def __init__(self, name, pretty_name, *cmds):
         self.name = name
         if name not in cmds:
             cmds = (name,) + cmds
 
         self.cmds = cmds
+        self.pretty_name = pretty_name
 
 
 ALIASES = (
-    Alias('bitcoin', 'btc'),
-    Alias('bitcoincash', 'bch'),
-    Alias('litecoin', 'ltc'),
-    Alias('dogecoin', 'doge'),
-    Alias('ethereum', 'eth'),
-    Alias('monero', 'xmr'),
-    Alias('zcash', 'zec'),
+    Alias('bitcoin', 'Bitcoin', 'btc'),
+    Alias('bch', 'Bitcoin Cash', 'bch'),
+    Alias('litecoin', 'Litecoin', 'ltc'),
+    Alias('dogecoin', 'Dogecoin', 'doge'),
+    Alias('ethereum', 'Ethereum', 'eth'),
+    Alias('monero', 'Monero', 'xmr'),
+    Alias('ripple', 'Ripple', 'xrp'),
+    Alias('zcash', 'Zcash', 'zec'),
 )
 
 
@@ -175,7 +177,7 @@ def alias_wrapper(alias):
     def func(text, reply):
         return crypto_command(" ".join((alias.name, text)), reply)
 
-    func.__doc__ = """- Returns the current {} value""".format(alias.name)
+    func.__doc__ = """- Returns the current {} value""".format(alias.pretty_name)
     func.__name__ = alias.name + "_alias"
 
     return func
@@ -202,7 +204,7 @@ def close_api():
 # main command
 @hook.command("cryptocurrency", "cmc", "crypto")
 def crypto_command(text, reply):
-    """<ticker> [currency] - Returns current value of a cryptocurrency"""
+    """<ticker> [currency] - Returns current value of a cryptocurrency from CoinMarketCap."""
     args = text.split()
     ticker = args.pop(0)
 
