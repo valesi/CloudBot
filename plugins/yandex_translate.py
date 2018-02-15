@@ -11,6 +11,8 @@ api_url = "https://translate.yandex.net/api/v1.5/tr.json/"
 def load_key(bot):
     global api_key, lang_dict, lang_dir
     api_key = bot.config.get("api_keys", {}).get("yandex_translate", None)
+    if not api_key:
+        return
     url = api_url + "getLangs"
     params = {
         'key': api_key,
