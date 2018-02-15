@@ -111,12 +111,10 @@
     "paste_exceptions": false,
     "plugin_loading": {
         "blacklist": [
-            "dogpile",
             "minecraft_ping",
             "minecraft_status",
             "minecraft_user",
             "minecraft_wiki",
-            "quote",
             "yandex_translate",
             "update"
         ],

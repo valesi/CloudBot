@@ -1,173 +1,213 @@
 import random
-import re
-import time
+from collections import defaultdict
+from threading import RLock
 
-from sqlalchemy import select, Table, Column, String, PrimaryKeyConstraint
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.types import REAL
+from sqlalchemy import Table, Column, String
+from sqlalchemy.exc import SQLAlchemyError
 
 from cloudbot import hook
 from cloudbot.util import database
+from cloudbot.util.pager import paginated_list
 
-qtable = Table(
-    'quote',
+search_pages = defaultdict(list)
+
+added_responses = ['Bam!', 'Bang!', 'Shazam!', 'Ding!', 'Dong!', 'Kapow!', 'Oh snap!', 'Wham!', 'lol', 'Nailed it!', 'hahaha']
+
+table = Table(
+    'grab',
     database.metadata,
-    Column('chan', String(25)),
-    Column('nick', String(25)),
-    Column('add_nick', String(25)),
-    Column('msg', String(500)),
-    Column('time', REAL),
-    Column('deleted', String(5), default=0),
-    PrimaryKeyConstraint('chan', 'nick', 'time')
+    Column('name', String),
+    Column('time', String),
+    Column('quote', String),
+    Column('chan', String)
 )
 
-
-def format_quote(q, num, n_quotes):
-    """Returns a formatted string of a quote"""
-    ctime, nick, msg = q
-    return "[{}/{}] <{}\u200B{}> {}".format(num, n_quotes,
-                                            nick[:1], nick[1:], msg)
+grab_cache = {}
+grab_locks = defaultdict(dict)
+grab_locks_lock = RLock()
+cache_lock = RLock()
 
 
-def add_quote(db, chan, target, sender, message):
-    """Adds a quote to a nick, returns message string"""
-    try:
-        query = qtable.insert().values(
-            chan=chan,
-            nick=target.lower(),
-            add_nick=sender.lower(),
-            msg=message,
-            time=time.time()
-        )
-        db.execute(query)
-        db.commit()
-    except IntegrityError:
-        return "Message already stored, doing nothing."
-    return "Quote added."
+@hook.on_start()
+def load_cache(db):
+    """
+    :type db: sqlalchemy.orm.Session
+    """
+    with cache_lock:
+        grab_cache.clear()
+        for row in db.execute(table.select().order_by(table.c.time)):
+            name = row["name"].lower()
+            quote = row["quote"]
+            chan = row["chan"]
+            grab_cache.setdefault(chan, {}).setdefault(name, []).append(quote)
 
 
-def del_quote(db, nick, msg):
-    """Deletes a quote from a nick"""
-    query = qtable.update() \
-        .where(qtable.c.chan == 1) \
-        .where(qtable.c.nick == nick.lower()) \
-        .where(qtable.c.msg == msg) \
-        .values(deleted=1)
-    db.execute(query)
-    db.commit()
+@hook.command("morequote", "qm", "moregrab", autohelp=False)
+def moregrab(text, chan, conn):
+    """[page] - if a search has lots of results the results are pagintated. If the most recent search is paginated the pages are stored for retreival. If no argument is given the next page will be returned else a page number can be specified."""
+    pages = search_pages[conn.name].get(chan)
+    if not pages:
+        return "There are no pages to show."
 
+    if text:
+        try:
+            index = int(text)
+        except ValueError:
+            return "Please specify an integer value."
 
-def get_quote_num(num, count, name):
-    """Returns the quote number to fetch from the DB"""
-    if num:  # Make sure num is a number if it isn't false
-        num = int(num)
-    if count == 0:  # Error on no quotes
-        raise Exception("No quotes found for {}.".format(name))
-    if num and num < 0:  # Count back if possible
-        num = count + num + 1 if num + count > -1 else count + 1
-    if num and num > count:  # If there are not enough quotes, raise an error
-        raise Exception("I only have {} quote{} for {}.".format(count, ('s', '')[count == 1], name))
-    if num and num == 0:  # If the number is zero, set it to one
-        num = 1
-    if not num:  # If a number is not given, select a random one
-        num = random.randint(1, count)
-    return num
-
-
-def get_quote_by_nick(db, nick, num=False):
-    """Returns a formatted quote from a nick, random or selected by number"""
-
-    count_query = select([qtable]) \
-        .where(qtable.c.deleted != 1) \
-        .where(qtable.c.nick == nick.lower()) \
-        .count()
-    count = db.execute(count_query).fetchall()[0][0]
-
-    try:
-        num = get_quote_num(num, count, nick)
-    except Exception as error_message:
-        return error_message
-
-    query = select([qtable.c.time, qtable.c.nick, qtable.c.msg]) \
-        .where(qtable.c.deleted != 1) \
-        .where(qtable.c.nick == nick.lower()) \
-        .order_by(qtable.c.time) \
-        .limit(1) \
-        .offset((num - 1))
-    data = db.execute(query).fetchall()[0]
-    return format_quote(data, num, count)
-
-
-def get_quote_by_nick_chan(db, chan, nick, num=False):
-    """Returns a formatted quote from a nick in a channel, random or selected by number"""
-    count_query = select([qtable]) \
-        .where(qtable.c.deleted != 1) \
-        .where(qtable.c.chan == chan) \
-        .where(qtable.c.nick == nick.lower()) \
-        .count()
-    count = db.execute(count_query).fetchall()[0][0]
-
-    try:
-        num = get_quote_num(num, count, nick)
-    except Exception as error_message:
-        return error_message
-
-    query = select([qtable.c.time, qtable.c.nick, qtable.c.msg]) \
-        .where(qtable.c.deleted != 1) \
-        .where(qtable.c.chan == chan) \
-        .where(qtable.c.nick == nick.lower()) \
-        .order_by(qtable.c.time) \
-        .limit(1) \
-        .offset((num - 1))
-    data = db.execute(query).fetchall()[0]
-    return format_quote(data, num, count)
-
-
-def get_quote_by_chan(db, chan, num=False):
-    """Returns a formatted quote from a channel, random or selected by number"""
-    count_query = select([qtable]) \
-        .where(qtable.c.deleted != 1) \
-        .where(qtable.c.chan == chan) \
-        .count()
-    count = db.execute(count_query).fetchall()[0][0]
-
-    try:
-        num = get_quote_num(num, count, chan)
-    except Exception as error_message:
-        return error_message
-
-    query = select([qtable.c.time, qtable.c.nick, qtable.c.msg]) \
-        .where(qtable.c.deleted != 1) \
-        .where(qtable.c.chan == chan) \
-        .order_by(qtable.c.time) \
-        .limit(1) \
-        .offset((num - 1))
-    data = db.execute(query).fetchall()[0]
-    return format_quote(data, num, count)
-
-
-@hook.command('q', 'quote')
-def quote(text, nick, chan, db, notice):
-    """[#chan] [nick] [#n] OR add <nick> <message> - gets the [#n]th quote by <nick> (defaulting to random)
-    OR adds <message> as a quote for <nick> in the caller's channel"""
-
-    add = re.match(r"add[^\w@]+(\S+?)>?\s+(.*)", text, re.I)
-    retrieve = re.match(r"(\S+)(?:\s+#?(-?\d+))?$", text)
-    retrieve_chan = re.match(r"(#\S+)\s+(\S+)(?:\s+#?(-?\d+))?$", text)
-
-    if add:
-        quoted_nick, msg = add.groups()
-        notice(add_quote(db, chan, quoted_nick, nick, msg))
-        return
-    elif retrieve:
-        selected, num = retrieve.groups()
-        by_chan = True if selected.startswith('#') else False
-        if by_chan:
-            return get_quote_by_chan(db, selected, num)
+        page = pages[index - 1]
+        if page is None:
+            return "Please specify a valid page number between 1 and {}.".format(len(pages))
         else:
-            return get_quote_by_nick(db, selected, num)
-    elif retrieve_chan:
-        chan, nick, num = retrieve_chan.groups()
-        return get_quote_by_nick_chan(db, chan, nick, num)
+            return page
+    else:
+        page = pages.next()
+        if page is not None:
+            return page
+        else:
+            return "All pages have been shown. You can specify a page number or do a new search."
 
-    notice(quote.__doc__)
+
+def check_grabs(name, quote, chan):
+    try:
+        if quote in grab_cache[chan][name.lower()]:
+            return True
+        else:
+            return False
+    except KeyError:
+        return False
+
+
+def grab_add(nick, time, msg, chan, db):
+    # Adds a quote to the grab table
+    db.execute(table.insert().values(name=nick, time=time, quote=msg, chan=chan))
+    db.commit()
+    load_cache(db)
+
+
+def get_latest_line(conn, chan, nick):
+    for name, timestamp, msg in reversed(conn.history[chan]):
+        if nick.casefold() == name.casefold():
+            return name, timestamp, msg
+
+    return None, None, None
+
+
+@hook.command("quoteadd", "qadd", "qa", "grab")
+def grab(text, nick, chan, db, conn, reply):
+    """<nick> - grabs the last message from the specified nick and adds it to the quote database"""
+    if text.lower() == nick.lower():
+        return "Think you're hot shit, eh?"
+
+    with grab_locks_lock:
+        grab_lock = grab_locks[conn.name.casefold()].setdefault(chan.casefold(), RLock())
+
+    with grab_lock:
+        name, timestamp, msg = get_latest_line(conn, chan, text)
+        if not msg:
+            return "I couldn't find anything from {} in recent history.".format(text)
+
+        if check_grabs(text.casefold(), msg, chan):
+            return "I already have that quote from {} in the database".format(text)
+
+        try:
+            grab_add(name.casefold(), timestamp, msg, chan, db)
+        except SQLAlchemyError as ex:
+            reply("Failed to add quote to db.")
+            raise
+
+        if check_grabs(name.casefold(), msg, chan):
+            return random.choice(added_responses)
+        else:
+            return "Uhh the quote wasn't added for some reason."
+
+
+def format_grab(name, quote):
+    # add zero-width space to nicks to avoid highlighting people with printed grabs
+    name = "{}{}{}".format(name[0], u"\u200B", name[1:])
+    if quote.startswith("\x01ACTION") or quote.startswith("*"):
+        quote = quote.replace("\x01ACTION", "").replace("\x01", "")
+        return "* {}{}".format(name, quote)
+    else:
+        return "<{}> {}".format(name, quote)
+
+
+
+@hook.command("lquote", "lq", "lastgrab", "lgrab")
+def lastgrab(text, chan, message):
+    """<nick> - prints the last grabbed quote from <nick>."""
+    try:
+        with cache_lock:
+            lgrab = grab_cache[chan][text.lower()][-1]
+    except (KeyError, IndexError):
+        return "<{}> has never been quoted.".format(text)
+    if lgrab:
+        quote = lgrab
+        message(format_grab(text, quote), chan)
+
+
+@hook.command("q", "rquote", "quoterandom", "grabrandom", "grabr", autohelp=False)
+def grabrandom(text, chan):
+    """[nick] - grabs a random quote from the quote database"""
+    with cache_lock:
+        if text:
+            tokens = text.split(' ')
+            if len(tokens) > 1:
+                name = random.choice(tokens)
+            else:
+                name = tokens[0]
+        else:
+            try:
+                name = random.choice(list(grab_cache[chan].keys()))
+            except KeyError:
+                return "I couldn't find any quotes in {}.".format(chan)
+        try:
+            grab = random.choice(grab_cache[chan][name.lower()])
+        except KeyError:
+            return "{} is boring and has never been quoted in here".format(name)
+
+    if grab:
+        return format_grab(name, grab)
+    else:
+        return "Hmmm try grabbing a quote first."
+
+
+@hook.command("quotesearch", "quotes", "qs", "grabsearch", "grabs", autohelp=False)
+def grabsearch(text, chan, conn):
+    """[text] - matches [text] against nicks or quote strings in the database"""
+    result = []
+    lower_text = text.lower()
+    with cache_lock:
+        try:
+            chan_grabs = grab_cache[chan]
+        except LookupError:
+            return "I couldn't find any quotes in {}.".format(chan)
+
+        try:
+            quotes = chan_grabs[lower_text]
+        except KeyError:
+            pass
+        else:
+            result.extend((text, quote) for quote in quotes)
+
+        for name, quotes in chan_grabs.items():
+            if name != lower_text:
+                result.extend((name, quote) for quote in quotes if lower_text in quote.lower())
+
+    if not result:
+        return "I couldn't find any matches for {}.".format(text)
+
+    grabs = []
+    for name, quote in result:
+        if lower_text == name:
+            name = text
+
+        grabs.append(format_grab(name, quote))
+
+    pager = paginated_list(grabs)
+    search_pages[conn.name][chan] = pager
+    page = pager.next()
+    if len(pager) > 1:
+        page[-1] += " .qm"
+
+    return page

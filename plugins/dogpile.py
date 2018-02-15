@@ -14,7 +14,7 @@ HEADERS = {
 }
 
 
-@hook.command("dpis", "gis")
+@hook.command("dpis")
 def dogpileimage(text):
     """<query> - Uses the dogpile search engine to search for images."""
     image_url = search_url + "/images"
@@ -32,7 +32,7 @@ def dogpileimage(text):
     return image
 
 
-@hook.command("dp", "g", "dogpile")
+@hook.command("dp", "dogpile")
 def dogpile(text):
     """<query> - Uses the dogpile search engine to find shit on the web."""
     web_url = search_url + "/web"
@@ -48,4 +48,4 @@ def dogpile(text):
         parse.unquote(results.find_all('a', {'class': 'resultDisplayUrl'})[0]['href']).split(
             'ru=')[1].split('&')[0])
     result_description = results.find_all('div', {'class': 'resultDescription'})[0].text
-    return "{} -- \x02{}\x02".format(result_url, result_description)
+    return "{} [div] {}".format(result_url, result_description)
