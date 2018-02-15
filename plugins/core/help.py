@@ -149,8 +149,7 @@ def generatehelp(conn, bot):
     # toss the markdown text into a paste
     # out = web.paste(message.encode('utf-8'), ext="md")
     docs = os.path.join(os.path.abspath(os.path.curdir), "docs")
-    docs = os.path.join(docs, "user")
-    f = open(os.path.join(docs, "commands.md"), 'w')
-    f.write(message)
-    f.close()
-    return  # out
+    docs = os.path.join(os.path.join(docs, "user"), "commands.md")
+    with open(docs, 'w', encoding="utf-8") as f:
+        f.write(message)
+    return "Generated help docs to " + docs
