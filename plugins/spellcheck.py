@@ -16,28 +16,29 @@ def spell(text):
         checker = SpellChecker(en_dict, filters=[EmailFilter, URLFilter])
         checker.set_text(text)
 
+        is_correct = True
         offset = 0
         for err in checker:
+            is_correct = False
             # find the location of the incorrect word
             start = err.wordpos + offset
             finish = start + len(err.word)
             # get some suggestions for it
             suggestions = err.suggest()
             s_string = '/'.join(suggestions[:3])
-            s_string = "\x02{}\x02".format(s_string)
+            s_string = "[h1]{}[/h1]".format(s_string)
             # calculate the offset for the next word
             offset = (offset + len(s_string)) - len(err.word)
             # replace the word with the suggestions
             text = text[:start] + s_string + text[finish:]
-        return text
+        return "$(green)Correct$(c)" if is_correct else text
     else:
         # input is a word
         is_correct = en_dict.check(text)
         suggestions = en_dict.suggest(text)
         s_string = ', '.join(suggestions[:10])
-        if is_correct:
-            return '"{}" appears to be \x02valid\x02! ' \
-                   '(suggestions: {})'.format(text, s_string)
-        else:
-            return '"{}" appears to be \x02invalid\x02! ' \
-                   '(suggestions: {})'.format(text, s_string)
+        return '"{}" appears to be {} [div] [h1]Similar:[/h1] {}'.format(
+            text,
+            "$(green)correct$(c)" if is_correct else "$(red)incorrect$(c)",
+            s_string)
+
