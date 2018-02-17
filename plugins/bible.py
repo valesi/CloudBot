@@ -24,4 +24,4 @@ def bible(text, reply):
     ch = response['chapter']
     ver = response['verse']
     txt = response['text']
-    return "\x02{} {}:{}\x02 {}".format(book, ch, ver, txt)
+    return "[h1]{} {}:{}[/h1] {}".format(book, ch, ver, txt)

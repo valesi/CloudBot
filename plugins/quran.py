@@ -50,7 +50,7 @@ def quran(text, message, reply):
 
     data = r.json()
     data2 = r2.json()
-    out = "\x02{}\x02: ".format(text)
+    out = "[h1]{}:[/h1] ".format(text)
     verse = data['Text']
     out += verse
     message(out)
