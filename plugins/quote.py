@@ -9,7 +9,7 @@ from cloudbot import hook
 from cloudbot.util import database
 from cloudbot.util.pager import paginated_list
 
-search_pages = defaultdict(list)
+search_pages = defaultdict(dict)
 
 added_responses = ['Bam!', 'Bang!', 'Shazam!', 'Ding!', 'Dong!', 'Kapow!', 'Oh snap!', 'Wham!', 'lol', 'Nailed it!', 'hahaha']
 
@@ -173,7 +173,7 @@ def grabrandom(text, chan):
 
 
 @hook.command("quotesearch", "quotes", "qs", "grabsearch", "grabs", autohelp=False)
-def grabsearch(text, chan, conn):
+def grabsearch(text, chan, conn, triggered_prefix):
     """[text] - matches [text] against nicks or quote strings in the database"""
     result = []
     lower_text = text.lower()
@@ -208,6 +208,6 @@ def grabsearch(text, chan, conn):
     search_pages[conn.name][chan] = pager
     page = pager.next()
     if len(pager) > 1:
-        page[-1] += " .qm"
+        page[-1] += " {}qm".format(triggered_prefix)
 
     return page
