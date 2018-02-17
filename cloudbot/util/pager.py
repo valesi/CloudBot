@@ -53,7 +53,7 @@ class Pager:
             return len(self.chunks)
 
 
-def paginated_list(data, delim=" \u2022 ", suffix='...', max_len=256, page_size=2):
+def paginated_list(data, delim=" [div] ", suffix='...', max_len=300, page_size=2):
     lines = [""]
     for item in data:
         if len(item) > max_len:
