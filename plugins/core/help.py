@@ -27,13 +27,7 @@ def help_command(text, chan, conn, bot, notice, reply, message, has_permission, 
         if searching_for in bot.plugin_manager.commands:
             doc = bot.plugin_manager.commands[searching_for].doc
             if doc:
-                if doc.split()[0] in searching_for:
-                    # this is using the old format of `name <args> - doc`
-                    message = "{}{}".format(triggered_prefix, doc)
-                else:
-                    # this is using the new format of `<args> - doc`
-                    message = "{}{} {}".format(triggered_prefix, searching_for, doc)
-                reply(message)
+                reply("{}{} {}".format(triggered_prefix, searching_for, doc))
             else:
                 reply("Command {} has no additional documentation.".format(searching_for))
             aliases = bot.plugin_manager.commands[searching_for].aliases
