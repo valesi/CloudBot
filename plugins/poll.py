@@ -62,7 +62,7 @@ class Poll:
 
 
 @hook.command()
-def poll(text, conn, nick, chan, message, reply):
+def poll(text, conn, nick, chan, message, reply, triggered_prefix):
     """{<question>[: <option1>, <option2>[, <option3>]...|close} - Creates a poll for [question] with the provided options (default: Yes, No), or closes the poll if the argument is 'close'"""
     global polls
 
@@ -74,7 +74,7 @@ def poll(text, conn, nick, chan, message, reply):
             return "You have no active poll to close."
 
         p = polls.get(uid)
-        reply("Your poll has been closed. Final results for \x02\"{}\"\x02:".format(p.question, p.creator))
+        reply("Poll closed. Final results for \x02'{}'\x02:".format(p.question, p.creator))
         message(p.format_results())
         del polls[uid]
         return
@@ -98,11 +98,12 @@ def poll(text, conn, nick, chan, message, reply):
 
     option_str = get_text_list([option.title for option in _poll.options.values()], "and")
     message('Created poll \x02\"{}\"\x02 with the following options: {}'.format(_poll.question, option_str))
-    message("Use .vote {} <option> to vote on this poll!".format(nick.lower()))
+    message("Use {prefix}vote {nick} <option> to vote on this poll!".format(
+        prefix=triggered_prefix, nick=nick.lower()))
 
 
 @hook.command(autohelp=True)
-def vote(text, nick, conn, chan, notice):
+def vote(text, nick, conn, chan, notice, triggered_prefix):
     """<poll> <choice> - Vote on a poll; responds on error and silently records on success."""
     global polls
 
@@ -110,7 +111,7 @@ def vote(text, nick, conn, chan, notice):
         _user, option = text.split(' ', 1)
         uid = ":".join([conn.name, chan, _user]).lower()
     else:
-        return "Invalid input, please use .vote <user> <option> to vote on a poll."
+        return "Invalid input, please use {prefix}vote <user> <option> to vote on a poll.".format(prefix=triggered_prefix)
 
     if uid not in polls.keys():
         return "Sorry, there is no active poll from that user."
@@ -126,7 +127,7 @@ def vote(text, nick, conn, chan, notice):
 
 
 @hook.command(autohelp=False)
-def results(text, conn, chan, nick, message, reply):
+def results(text, conn, chan, nick, message, reply, triggered_prefix):
     """[user] - Shows current results from [user]'s poll. If [user] is empty, it will show results for your poll."""
     global polls
 
@@ -137,7 +138,8 @@ def results(text, conn, chan, nick, message, reply):
     else:
         uid = ":".join([conn.name, chan, nick]).lower()
         if uid not in polls.keys():
-            return "You have no current poll. Use .vote <user> <option> to vote on another users poll."
+            return "You have no current poll. Use {prefix}vote <user> <option> to vote on another users poll.".format(
+                                                    prefix=triggered_prefix)
 
     p = polls.get(uid)
 
