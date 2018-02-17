@@ -22,6 +22,7 @@ import json
 import os
 import random
 import re
+import unicodedata
 import urllib.parse
 
 from cloudbot import hook
@@ -178,6 +179,34 @@ def escape(text):
     """<string> -- Unicode escapes <string>."""
     encoder = codecs.getencoder("unicode_escape")
     return " ".join(encoder(text)[0].decode().splitlines())
+
+
+@hook.command
+def unicode(text, notice_doc):
+    """name <char> | char <name> - Gets the Unicode character information."""
+    if len(text.split()) < 2:
+        notice_doc()
+        return
+
+    cmd, arg = text.split(maxsplit=1)
+    cmd = cmd.lower()
+
+    if cmd == "name":
+        data = {}
+        for c in arg:
+            if c not in data:
+                data[c] = unicodedata.name(c)
+        return " [div] ".join(["[h1]{}[/h1] {}".format(k, v) for k, v in data.items()])
+    elif cmd == "char":
+        try:
+            name = unicodedata.lookup(arg)
+        except KeyError:
+            name = "Name not found"
+        except Exception as ex:
+            name = "Error: {}".format(ex)
+        return name
+    else:
+        notice_doc()
 
 
 # length
