@@ -22,16 +22,10 @@ from cloudbot.util import formatting, web
 
 ITEM_URL = "https://www.newegg.com/Product/Product.aspx?Item={}"
 
-API_PRODUCT = "https://www.ows.newegg.com/Products.egg/{}"
+API_PRODUCT = "https://www.ows.newegg.{}/Products.egg/{}"
 API_SEARCH = "https://www.ows.newegg.com/Search.egg/Advanced"
 
 NEWEGG_RE = re.compile(r"(?:(?:www\.newegg\.(com|ca))(?:/global/(?:\w+))?/Product/Product\.aspx\?Item=)([-_a-zA-Z0-9]+)", re.I)
-
-# newegg thinks it's so damn smart blocking my scraper
-HEADERS = {
-    'User-Agent': 'Newegg Android App / 4.7.2',
-    'Referer': 'http://www.newegg.com/'
-}
 
 CURRENCY = {"com": "USD", "ca": "CAD"}
 
@@ -86,7 +80,7 @@ def newegg_url(match):
     item_id = match.group(2)
 
     try:
-        item = requests.get(API_PRODUCT.format(tld, item_id), headers=HEADERS).json()
+        item = requests.get(API_PRODUCT.format(tld, item_id)).json()
         return format_item(tld, item, show_url=False)
     except Exception as ex:
         return "Failed to get info: " + str(ex)
