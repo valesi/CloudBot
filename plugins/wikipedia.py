@@ -16,13 +16,13 @@ wiki_re = re.compile('wikipedia.org/wiki/([^\s]+)')
 
 @hook.regex(wiki_re)
 def wiki_re(match):
-    return wiki(match.group(1), show_url=False)
+    return wiki_search(match.group(1), show_url=False)
 
 
 @hook.command("wiki", "wikipedia", "w", "wik")
-def wiki(text, show_url=True):
+def wiki(text):
     """<query> -- Gets first sentence of Wikipedia article on <query>."""
-    return get_wiki({"action": "opensearch", "redirects": "resolve", "limit": "2", "search": requests.utils.unquote(text.strip().replace("_", " "))}, show_url=show_url)
+    return wiki_search(text, show_url=True)
 
 
 @hook.command(autohelp=False)
@@ -36,6 +36,11 @@ def wikirand():
         return "Could not get Wikipedia page: {}".format(e)
 
     return wiki(request.json()["query"]["random"][0]["title"])
+
+
+def wiki_search(text, show_url=True):
+    """<query> -- Gets first sentence of Wikipedia article on <query>."""
+    return get_wiki({"action": "opensearch", "redirects": "resolve", "limit": "2", "search": requests.utils.unquote(text.strip().replace("_", " "))}, show_url=show_url)
 
 
 def get_wiki(params, show_url=False):
