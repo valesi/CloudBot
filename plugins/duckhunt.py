@@ -314,7 +314,7 @@ def update_score(nick, chan, db, conn, shoot=0, friend=0):
         return {'shoot': shoot, 'friend': friend}
 
 
-def attack(event, nick, chan, message, db, conn, notice, attack):
+def attack(event, nick, chan, message, db, conn, reply, attack):
     global game_status, scripters
     if chan in opt_out:
         return
@@ -359,8 +359,8 @@ def attack(event, nick, chan, message, db, conn, notice, attack):
         shoot = status['shoot_time']
         if nick.lower() in scripters:
             if scripters[nick.lower()] > shoot:
-                notice(
-                    "You are in a cool down period, you can try again in {:.3f} seconds.".format(
+                reply(
+                    "You are in a cool down period, you can try again in {:.1f} seconds.".format(
                         scripters[nick.lower()] - shoot
                     )
                 )
@@ -397,17 +397,17 @@ def attack(event, nick, chan, message, db, conn, notice, attack):
 
 
 @hook.command("bang", autohelp=False)
-def bang(nick, chan, message, db, conn, notice, event):
+def bang(nick, chan, message, db, conn, reply, event):
     """- when there is a duck on the loose use this command to shoot it."""
     with chan_locks[conn.name][chan.casefold()]:
-        return attack(event, nick, chan, message, db, conn, notice, "shoot")
+        return attack(event, nick, chan, message, db, conn, reply, "shoot")
 
 
 @hook.command("befriend", autohelp=False)
-def befriend(nick, chan, message, db, conn, notice, event):
+def befriend(nick, chan, message, db, conn, reply, event):
     """- when there is a duck on the loose use this command to befriend it before someone else shoots it."""
     with chan_locks[conn.name][chan.casefold()]:
-        return attack(event, nick, chan, message, db, conn, notice, "befriend")
+        return attack(event, nick, chan, message, db, conn, reply, "befriend")
 
 
 def smart_truncate(content, length=320, suffix='...'):
