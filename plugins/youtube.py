@@ -1,6 +1,6 @@
 import re
 import time
-
+from datetime import datetime
 import isodate
 import requests
 
@@ -38,6 +38,9 @@ def get_video_description(video_id, show_url=False):
         else:
             return
 
+    if not json.get('items'):
+        return "No data"
+
     data = json['items'][0]
     snippet = data['snippet']
     content_details = data['contentDetails']
@@ -58,9 +61,14 @@ def get_video_description(video_id, show_url=False):
 
     out.append(snippet['channelTitle'])
 
-    if "live" in snippet['liveBroadcastContent']:
+    if 'liveStreamingDetails' in data:
+        live_details = data['liveStreamingDetails']
+
+    if 'live' in snippet['liveBroadcastContent']:
         out.append("$(red)LIVE$(c)")
-        #livestream_details = data['liveStreamingDetails']
+    elif 'upcoming' in snippet['liveBroadcastContent']:
+        until = datetime.strptime(live_details['scheduledStartTime'], '%Y-%m-%dT%H:%M:%S.%fZ') - datetime.utcnow()
+        out.append("$(red)LIVE$(c) in {}".format(timeformat.format_time(int(until.total_seconds()), simple=True)))
     else:
         length = isodate.parse_duration(content_details.get('duration'))
         out.append(timeformat.format_time(int(length.total_seconds()), simple=True))
@@ -79,8 +87,8 @@ def get_video_description(video_id, show_url=False):
         out.append(u'{:,} views'.format(views))  # Eye \U0001f441
 
     if statistics.get('likeCount'):
-        likes = u'{:,} $(green)\u25b2$(c)'.format(int(statistics.get('likeCount')))  # Thumbs up: \U0001F44D
-        dislikes = u'{:,} $(red)\u25bc$(c)'.format(int(statistics.get('dislikeCount')))  # Down: \U0001F44E
+        likes = u'{:,}$(green)\u25b2$(c)'.format(int(statistics.get('likeCount')))  # Thumbs up: \U0001F44D
+        dislikes = u'{:,}$(red)\u25bc$(c)'.format(int(statistics.get('dislikeCount')))  # Down: \U0001F44E
         out.append('{} {}'.format(likes, dislikes))
 
     return start + ' [div] '.join(out)
