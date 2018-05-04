@@ -55,8 +55,7 @@ url_re = re.compile(
 )
 
 HEADERS = {
-    'Accept-Language': 'en-US,en;q=0.5',
-    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.116 Safari/537.36'
+    'User-Agent': 'Mozilla/5.0 Cloudbot/1'
 }
 
 MAX_RECV = 1000000
