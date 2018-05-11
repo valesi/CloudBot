@@ -21,9 +21,7 @@ def etymology(text, reply):
     :type text: str
     """
 
-    url = 'http://www.etymonline.com/search'
-
-    response = requests.get(url, params={"term": text})
+    response = requests.get('https://www.etymonline.com/search', params={"q": text})
 
     try:
         response.raise_for_status()
@@ -31,25 +29,22 @@ def etymology(text, reply):
         reply("Error reaching etymonline.com: {}".format(e.response.status_code))
         raise
 
-    if response.status_code != requests.codes.ok:
-        return "Error reaching etymonline.com: {}".format(response.status_code)
-
     soup = BeautifulSoup(response.text, "lxml")
 
-    block = soup.find('div', class_=re.compile("word--.+"))
+    result = soup.find('a', class_=re.compile("word--.+"))
 
-    if not block:
-        return 'No etymology found for {} :('.format(text)
+    if not result:
+        return 'No etymology found'
 
-    etym = ' '.join(e.text for e in block.div)
-
-    etym = ' '.join(etym.splitlines())
+    title = result.div.p.text.strip()
+    etym = result.div.section.text.strip()
+    url = result['href']
 
     # Strip ellipsis
-    if text.endswith(" …"):
-        text = text[:-2]
+    if etym.endswith(" …"):
+        etym = etym[:-2]
 
-    out = '[h1]{}:[/h1] {}'.format(" ".join(etym.split()), " ".join(text.split()))
+    out = '[h1]{}:[/h1] {}'.format(title, etym)
 
     if len(out) > 400:
         out = out[:out.rfind(' ', 0, 400)] + ' ...'
