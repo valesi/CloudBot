@@ -8,6 +8,8 @@ from cloudbot import hook
 from cloudbot.util import timeformat
 
 
+LOCALE = 'en_US'
+
 youtube_re = re.compile(r'(?:youtube.*?(?:v=|/v/)|youtu\.be/|yooouuutuuube.*?id=)([-_a-zA-Z0-9]+)', re.I)
 
 api_url = 'https://www.googleapis.com/youtube/v3/'
@@ -30,7 +32,7 @@ def youtube_url(match):
 
 
 def get_video_description(video_id, show_url=False):
-    json = requests.get(api_url + "videos", params={"id": video_id, "key": dev_key, "part": ",".join(video_parts)}).json()
+    json = requests.get(api_url + "videos", params={"id": video_id, "key": dev_key, "part": ",".join(video_parts), "hl": LOCALE}).json()
 
     if json.get('error'):
         if json['error']['code'] == 403:
@@ -51,7 +53,7 @@ def get_video_description(video_id, show_url=False):
     if show_url:
         out.append('[h3]https://youtu.be/{}[/h3]'.format(video_id))
 
-    out.append(snippet['title'])
+    out.append(snippet['localized']['title'])
 
     if 'duration' not in content_details:
         return start + ' [div] '.join(out)
