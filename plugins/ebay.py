@@ -12,13 +12,13 @@ from bs4 import BeautifulSoup
 from cloudbot import hook
 
 
-BASE_URL = 'http://www.ebay.{}/itm/{}'
-SEARCH_URL = 'http://www.ebay.com/sch/i.html'
+BASE_URL = 'https://www.ebay.{}/itm/{}'
+SEARCH_URL = 'https://www.ebay.com/sch/i.html'
 ebay_re = re.compile(r"\.ebay\.(\w+(?:\.\w+)?)/(?:.*)?/(\d+)", re.I)
 
 HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.1',
-    'Referer': 'http://www.ebay.com/'
+    'User-Agent': 'Mozilla/5.0 CloudBot/1',
+    'Referer': 'https://www.ebay.com/'
 }
 
 # Max 1600
