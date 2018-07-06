@@ -10,7 +10,7 @@ def load_jokes(bot):
     """
     :type bot: cloudbot.bot.Cloudbot
     """
-    global yo_momma, do_it, pun, confucious, one_liner, wisdom, book_puns, lawyerjoke, kero_sayings
+    global yo_momma, do_it, pun, confucius, one_liner, wisdom, book_puns, lawyerjoke, kero_sayings
 
     with codecs.open(os.path.join(bot.data_dir, "yo_momma.txt"), encoding="utf-8") as f:
         yo_momma = [line.strip() for line in f.readlines() if not line.startswith("//")]
@@ -22,7 +22,7 @@ def load_jokes(bot):
         pun = [line.strip() for line in f.readlines() if not line.startswith("//")]
 
     with codecs.open(os.path.join(bot.data_dir, "confucious.txt"), encoding="utf-8") as f:
-        confucious = [line.strip() for line in f.readlines() if not line.startswith("//")]
+        confucius = [line.strip() for line in f.readlines() if not line.startswith("//")]
 
     with codecs.open(os.path.join(bot.data_dir, "one_liners.txt"), encoding="utf-8") as f:
         one_liner = [line.strip() for line in f.readlines() if not line.startswith("//")]
@@ -60,9 +60,9 @@ def pun(message):
 
 
 @hook.command(autohelp=False)
-def confucious(message):
-    """- confucious say man standing on toilet is high on pot."""
-    message('Confucious say {}'.format(random.choice(confucious).lower()))
+def confucius(message):
+    """- confucius say man standing on toilet is high on pot."""
+    message('Confucius say {}'.format(random.choice(confucius).lower()))
 
 
 @hook.command(autohelp=False)
