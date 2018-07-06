@@ -17,7 +17,7 @@ reddit_re = re.compile(
     # Domain
     (?:
         redd\.it|
-        (?:www\.)?reddit\.com/r
+        (?:www\.|old\.)?reddit\.com/r
     )
 
     (?:/(?:[A-Za-z0-9!$&-.:;=@_~\u00A0-\u10FFFD]|%[A-F0-9]{2})*)*  # Path
