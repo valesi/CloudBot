@@ -10,7 +10,7 @@ from cloudbot.util import web, formatting
 
 SEARCH_URL = "https://www.amazon.{}/s/"
 PAGE_URL = "https://www.amazon.{}/{}/{}"
-REGION = "com"
+DEFAULT_TLD = "com"
 
 AMAZON_RE = re.compile(""".*ama?zo?n\.(com|co\.uk|com\.au|de|fr|ca|cn|es|it)/.*/(?:exec/obidos/ASIN/|o/|gp/product/|
 (?:(?:[^"\'/]*)/)?dp/|)(B[A-Z0-9]{9})""", re.I)
@@ -34,11 +34,9 @@ def amazon(text, reply, _parsed=False):
         'url': 'search-alias',
         'field-keywords': text.strip()
     }
-    if _parsed:
-        # input is from a link parser, we need a specific URL
-        request = requests.get(SEARCH_URL.format(_parsed), params=params, headers=headers)
-    else:
-        request = requests.get(SEARCH_URL.format(REGION), params=params, headers=headers)
+
+    # if input is from a link parser, we want its TLD
+    request = requests.get(SEARCH_URL.format(_parsed if _parsed else DEFAULT_TLD), params=params, headers=headers)
 
     try:
         request.raise_for_status()
@@ -46,23 +44,40 @@ def amazon(text, reply, _parsed=False):
         reply("Amazon API error occurred.")
         raise
 
-    soup = BeautifulSoup(request.text)
+    soup = BeautifulSoup(request.text, 'lxml')
 
     # check if there are any results on the amazon page
     results = soup.find('div', {'id': 'atfResults'})
     if not results:
-        if not _parsed:
-            return "No results found."
-        else:
-            return
+        return 'Not found.'
 
-    # get the first item from the results on the amazon page
+    # get all search results
     results = results.find('ul', {'id': 's-results-list-atf'}).find_all('li', {'class': 's-result-item'})
-    item = results[0]
+
+    # loop over all results, as not all results are products
+    for result in results:
+        item = parse_item(result, _parsed, reply)
+        if item:
+            return item
+
+
+def parse_item(item, _parsed, reply):
     asin = item['data-asin']
 
     # here we use dirty html scraping to get everything we need
-    title = formatting.truncate(item.find('h2', {'class': 's-access-title'}).text, 200)
+    title_item = item.find('h2', {'class': 's-access-title'})
+    if not title_item:
+        return None
+    title = formatting.truncate(title_item.text, 200)
+
+    # add seller/maker if it isn't already in the title
+    try:
+        byline = title_item.parent.parent.next_sibling
+        if byline and byline.text.startswith('by') and byline.span.next_sibling.text.lower() not in title.lower():
+            title += ' ' + byline.text
+    except:
+        pass
+
     tags = []
 
     # tags!
@@ -78,37 +93,38 @@ def amazon(text, reply, _parsed=False):
                  r"|Spedizione gratuita)", item.text, re.I):
         tags.append("Free Shipping")
 
-    price = item.find('span', {'class': 'sx-price-whole'})
-    if price:
-        price = '{}{}.{}'.format(item.find('sup', {'class': 'sx-price-currency'}).text,
-                                 item.find('span', {'class': 'sx-price-whole'}).text,
-                                 item.find('sup', {'class': 'sx-price-fractional'}).text)
+    price_item = item.find('span', {'class': ['sx-price', 'sx-price-large']})
+    if price_item:
+        price = '{}{}.{}'.format(price_item.find('sup', {'class': 'sx-price-currency'}).text,
+                                 price_item.find('span', {'class': 'sx-price-whole'}).text,
+                                 price_item.find('sup', {'class': 'sx-price-fractional'}).text)
     else:
         price = item.find('span', {'class': ['s-price', 'a-color-price']})
         if price:
             price = price.text
         else:
-            price = item.find('span', {'class': ['s-price', 'a-color-base']}).text
+            price = item.find('span', {'class': ['s-price', 'a-color-base']})
+            price = price.text if price else 'No price'
 
-    # use a whole lot of BS4 and regex to get the ratings
-    try:
+    # use a bit of BS4 and regex to get the ratings
+    rating = item.find('i', {'class': 'a-icon-star'})
+    if rating:
         # get the rating
-        rating = item.find('i', {'class': 'a-icon-star'}).find('span', {'class': 'a-icon-alt'}).text
-        rating = re.search(r"([0-9]+(?:[.,][0-9])?).*5", rating).group(1).replace(",", ".")
+        rating = rating.span.text.split()[0].replace(",", ".")
         # get the rating count
         pattern = re.compile(r"(product-reviews|#customerReviews)")
         num_ratings = item.find('a', {'href': pattern}).text.replace(".", ",")
         # format the rating and count into a nice string
         rating_str = "{}/5 ({} ratings)".format(rating, num_ratings)
-    except AttributeError:
+    else:
         rating_str = "No Ratings"
 
     # join all the tags into a string
     tag_str = " [div] " + ", ".join(tags) if tags else ""
 
     # generate a short url
-    url = "[h3]https://www.amazon.com/dp/{}/[/h3]".format(asin)
     #url = web.try_shorten(url)
+    url = "[h3]https://www.amazon.com/dp/{}/[/h3]".format(asin)
 
     # finally, assemble everything into the final string, and return it!
     out = "[h1]Amazon:[/h1] {} [div] {} [div] {}{}".format(title, price, rating_str, tag_str)
