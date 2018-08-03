@@ -12,7 +12,7 @@ SEARCH_URL = "https://www.amazon.{}/s/"
 PAGE_URL = "https://www.amazon.{}/{}/{}"
 DEFAULT_TLD = "com"
 
-AMAZON_RE = re.compile(""".*ama?zo?n\.(com|co\.uk|com\.au|de|fr|ca|cn|es|it)/.*/(?:exec/obidos/ASIN/|o/|gp/product/|
+AMAZON_RE = re.compile(""".*ama?zo?n\.(\w+(?:\.\w+)?)/.*/(?:exec/obidos/ASIN/|o/|gp/product/|
 (?:(?:[^"\'/]*)/)?dp/|)(B[A-Z0-9]{9})""", re.I)
 
 
@@ -122,12 +122,6 @@ def parse_item(item, _parsed, reply):
     # join all the tags into a string
     tag_str = " [div] " + ", ".join(tags) if tags else ""
 
-    # generate a short url
-    #url = web.try_shorten(url)
-    url = "[h3]https://www.amazon.com/dp/{}/[/h3]".format(asin)
-
     # finally, assemble everything into the final string, and return it!
     out = "[h1]Amazon:[/h1] {} [div] {} [div] {}{}".format(title, price, rating_str, tag_str)
-    if not _parsed:
-        out +=  " [div] " + url
-    return out
+    return out if _parsed else out + " [div] [h3]https://www.amazon.com/dp/{}/[/h3]".format(asin)
