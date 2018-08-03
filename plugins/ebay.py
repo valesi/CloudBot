@@ -14,7 +14,7 @@ from cloudbot import hook
 
 BASE_URL = 'https://www.ebay.{}/itm/{}'
 SEARCH_URL = 'https://www.ebay.com/sch/i.html'
-ebay_re = re.compile(r"\.ebay\.(\w+(?:\.\w+)?)/(?:.*)?/(\d+)", re.I)
+ebay_re = re.compile(r"(?:rover)?\.ebay\.(\w+(?:\.\w+)?)/(?:.*)?(?:/|%2F)([\d]+)", re.I)
 
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 CloudBot/1',
@@ -163,7 +163,7 @@ def ebay(text):
     if not r.text:
         return 'Search failed. Hmmm.'
 
-    soup = BeautifulSoup(r.text)
+    soup = BeautifulSoup(r.text, 'lxml')
     listing = soup.find('ul', {'id': 'ListViewInner'})
 
     for tag in listing or []:
