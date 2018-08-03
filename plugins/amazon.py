@@ -12,8 +12,7 @@ SEARCH_URL = "https://www.amazon.{}/s/"
 PAGE_URL = "https://www.amazon.{}/{}/{}"
 DEFAULT_TLD = "com"
 
-AMAZON_RE = re.compile(""".*ama?zo?n\.(\w+(?:\.\w+)?)/.*/(?:exec/obidos/ASIN/|o/|gp/product/|
-(?:(?:[^"\'/]*)/)?dp/|)(B[A-Z0-9]{9})""", re.I)
+AMAZON_RE = re.compile(r'.*ama?zo?n\.(\w+(?:\.\w+)?)/.*/(?:exec/obidos/ASIN/|o/|gp/product/|(?:(?:[^"\'/]*)/)?dp/|)(B?[A-Z0-9]{9,10})', re.I)
 
 
 @hook.regex(AMAZON_RE)
