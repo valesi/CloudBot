@@ -64,46 +64,38 @@ def parse_item(item, _parsed, reply):
     asin = item['data-asin']
 
     # here we use dirty html scraping to get everything we need
-    title_item = item.find('h2', {'class': 's-access-title'})
-    if not title_item:
+    title = item.find('a', {'class': 's-access-detail-page'})
+    if not title:
         return None
-    title = formatting.truncate(title_item.text, 200)
+    out = [formatting.truncate(title.text, 200)]
 
     # add seller/maker if it isn't already in the title
     try:
-        byline = title_item.parent.parent.next_sibling
-        if byline and byline.text.startswith('by') and byline.span.next_sibling.text.lower() not in title.lower():
-            title += ' ' + byline.text
+        # element immediately after product title div, containing small spans of secondary color
+        byline = title.parent.find_next_sibling('div', class_=['a-row', 'a-spacing-none']).find_all('span', class_=['a-size-small', 'a-color-secondary'])
+        if byline:
+            # first word is 'by' (and translations), so we skip it
+            bywords = ''.join([s.text for s in byline[1:]]).split()
+            # all words in title in any order
+            # (doesn't work with multiple authors. 'and' and commas etc)
+            if not all(word.lower() in out[0].lower() for word in bywords):
+                out.append(' '.join(bywords))
     except:
         pass
 
-    tags = []
-
-    # tags!
-    if item.find('i', {'class': 'a-icon-prime'}):
-        tags.append("Prime")
-
-    if item.find('i', {'class': 'sx-bestseller-badge-primary'}):
-        tags.append("Bestseller")
-
-    # we use regex because we need to recognise text for this part
-    # the other parts detect based on html tags, not text
-    if re.search(r"(Kostenlose Lieferung|Livraison gratuite|FREE Shipping|Envío GRATIS"
-                 r"|Spedizione gratuita)", item.text, re.I):
-        tags.append("Free Shipping")
-
-    price_item = item.find('span', {'class': ['sx-price', 'sx-price-large']})
-    if price_item:
-        price = '{}{}.{}'.format(price_item.find('sup', {'class': 'sx-price-currency'}).text,
-                                 price_item.find('span', {'class': 'sx-price-whole'}).text,
-                                 price_item.find('sup', {'class': 'sx-price-fractional'}).text)
+    price= item.find('span', {'class': ['sx-price', 'sx-price-large']})
+    if price:
+        price = '{}{}.{}'.format(price.find('sup', {'class': 'sx-price-currency'}).text,
+                                 price.find('span', {'class': 'sx-price-whole'}).text,
+                                 price.find('sup', {'class': 'sx-price-fractional'}).text)
     else:
         price = item.find('span', {'class': ['s-price', 'a-color-price']})
         if price:
             price = price.text
         else:
             price = item.find('span', {'class': ['s-price', 'a-color-base']})
-            price = price.text if price else 'No price'
+            price = price.text if price else 'No Price'
+    out.append(price)
 
     # use a bit of BS4 and regex to get the ratings
     rating = item.find('i', {'class': 'a-icon-star'})
@@ -117,10 +109,25 @@ def parse_item(item, _parsed, reply):
         rating_str = "{}/5 ({} ratings)".format(rating, num_ratings)
     else:
         rating_str = "No Ratings"
+    out.append(rating_str)
+
+    tags = []
+    # tags!
+    if item.find('i', {'class': 'a-icon-prime'}):
+        tags.append("Prime")
+    if item.find('i', {'class': 'sx-bestseller-badge-primary'}):
+        tags.append("Bestseller")
+
+    # we use regex because we need to recognise text for this part
+    # the other parts detect based on html tags, not text
+    if re.search(r"(Kostenlose Lieferung|Livraison gratuite|FREE Shipping|Envío GRATIS"
+                 r"|Spedizione gratuita)", item.text, re.I):
+        tags.append("Free Shipping")
 
     # join all the tags into a string
-    tag_str = " [div] " + ", ".join(tags) if tags else ""
+    if tags:
+        out.append(", ".join(tags))
 
     # finally, assemble everything into the final string, and return it!
-    out = "[h1]Amazon:[/h1] {} [div] {} [div] {}{}".format(title, price, rating_str, tag_str)
+    out = "[h1]Amazon:[/h1] " + " [div] ".join(out)
     return out if _parsed else out + " [div] [h3]https://www.amazon.com/dp/{}/[/h3]".format(asin)
