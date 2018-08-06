@@ -85,6 +85,11 @@ def get_info(cc, item_id, show_url=False):
             buy += " ($(green)OBO$(c))"
         out.append(buy)
 
+    # Remove cents if price is whole dollar etc
+    for price, value in [(k, i[k]) for k in ['bid_price', 'buy_price', 'bid_foreign_price', 'buy_foreign_price', 'ship_cost'] if k in i]:
+        if value.endswith("00") and value[-3] in ('.', ','):
+            i[price] = value[:-3]
+
     # Time left
     time_left = body.find(id="vi-cdown_timeLeft")
     if time_left:
@@ -122,16 +127,8 @@ def get_info(cc, item_id, show_url=False):
         # If m wasn't a match, maybe use src="viEnlargeImgLayer_img_ctr"
         out.append("[h1]Img:[/h1] {image}")
 
-    ## Clean up
-    # Remove cents if price is whole dollar etc
-    for price in ['bid_price', 'buy_price', 'bid_foreign_price', 'buy_foreign_price', 'ship_cost']:
-        try:
-            i[price] = i[price].replace(".00", "")
-        except:
-            pass
-
     if show_url:
-        out.append("[h3]{}".format(BASE_URL.format(cc, item_id)))
+        out.append("[h3]{}[/h3]".format(BASE_URL.format(cc, item_id)))
 
     # Kill any and all details' surrounding whitespace
     for k, v in i.items():
