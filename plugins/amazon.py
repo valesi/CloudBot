@@ -12,7 +12,8 @@ SEARCH_URL = "https://www.amazon.{}/s/"
 PAGE_URL = "https://www.amazon.{}/{}/{}"
 DEFAULT_TLD = "com"
 
-AMAZON_RE = re.compile(r'.*ama?zo?n\.(\w+(?:\.\w+)?)/.*/(?:exec/obidos/ASIN/|o/|gp/product/|(?:(?:[^"\'/]*)/)?dp/|)(B?[A-Z0-9]{9,10})', re.I)
+AMAZON_RE = re.compile(r'https?://(?:.+\.)?ama?zo?n\.(\w+(?:\.\w+)?)/(?:.*/(?:exec/obidos/ASIN/|o/|gp/product/|(?:(?:[^"\'/]*)/)?dp/|))?(B?[A-Z0-9]{9,10})', re.I)
+SHORT_RE = re.compile(r'https?://(a\.co|amzn\.to)/\w+', re.I)
 
 
 @hook.regex(AMAZON_RE)
@@ -20,6 +21,21 @@ def amazon_url(match, reply):
     cc = match.group(1)
     asin = match.group(2)
     return amazon(asin, reply, _parsed=cc)
+
+
+@hook.regex(SHORT_RE)
+def amazon_short_url(match, reply):
+    '''Expand redirect from Amazon URL shorteners'''
+    try:
+        loc = web.expand(match.group(0))
+        match = AMAZON_RE.search(loc)
+        if match:
+            return amazon_url(match, reply)
+        else:
+            return url + " didn't redirect to an Amazon product"
+    except Exception as ex:
+        reply('Failed to get redirect: {}'.format(ex))
+        raise
 
 
 @hook.command("amazon", "az", "amzn")
