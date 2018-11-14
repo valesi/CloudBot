@@ -110,8 +110,9 @@ def parse_item(item, _parsed, reply):
             price = price.text
         else:
             price = item.find('span', {'class': ['s-price', 'a-color-base']})
-            price = price.text if price else 'No Price'
-    out.append(price)
+            price = price.text if price else None
+    if price:
+        out.append('$(b){}$(b)'.format(price))
 
     # use a bit of BS4 and regex to get the ratings
     rating = item.find('i', {'class': 'a-icon-star'})
