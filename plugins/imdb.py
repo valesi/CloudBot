@@ -15,12 +15,20 @@ def on_start(bot):
     api_key = bot.config["api_keys"].get("omdb")
 
 
-def get_info(params=None, headers=None, show_url=True):
+def get_info(reply, params=None, headers=None, show_url=True):
     if api_key:
         params["apikey"] = api_key
     else:
         return
-    content = requests.get("https://www.omdbapi.com/", params=params, headers=headers).json()
+
+    resp = requests.get("https://www.omdbapi.com/", params=params, headers=headers, timeout=10)
+    try:
+        resp.raise_for_status()
+    except requests.HTTPError as ex:
+        reply("Error reaching OMDB API: " + ex.response.status_code)
+        raise
+
+    content = resp.json()
 
     if content.get("Error", None) == "Movie not found!":
         return "Not found."
@@ -41,19 +49,19 @@ def get_info(params=None, headers=None, show_url=True):
 
 
 @hook.command
-def imdb(text, bot):
+def imdb(text, bot, reply):
     """<movie> - gets information about <movie> from IMDb"""
     params = {"i": text} if id_re.match(text) else {'t': text}
     headers = {"User-Agent": bot.user_agent}
 
-    return get_info(params, headers)
+    return get_info(reply, params, headers)
 
 
 @hook.regex(imdb_re)
-def imdb_url(match, bot):
+def imdb_url(match, bot, reply):
     imdb_id = match.group(2)
 
     params = {"i": imdb_id}
     headers = {"User-Agent": bot.user_agent}
 
-    return get_info(params, headers, show_url=False)
+    return get_info(reply, params, headers, show_url=False)
