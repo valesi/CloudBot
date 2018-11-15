@@ -33,6 +33,13 @@ except ImportError:
 
 logger = logging.getLogger("cloudbot")
 
+try:
+    import uvloop
+    logger.info('uvloop found: setting event loop policy.')
+    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+except:
+    pass
+
 
 def clean_name(n):
     """strip all spaces and capitalization
