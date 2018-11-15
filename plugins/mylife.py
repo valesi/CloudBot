@@ -15,18 +15,20 @@ mlia_cache = []
 @asyncio.coroutine
 def refresh_fml_cache(loop):
     """ gets a page of random FMLs and puts them into a dictionary """
-    url = 'http://www.fmylife.com/random'
+    url = 'https://www.fmylife.com/random'
     _func = functools.partial(requests.get, url, timeout=6)
     request = yield from loop.run_in_executor(None, _func)
     request.raise_for_status()
     soup = BeautifulSoup(request.text)
 
     for e in soup.find_all('article', {'class': 'art-panel'}):
-        article = e.find('div', {'class': 'panel-content'}).find('a')
-        text = article.text.strip()
-        if text.endswith(' FML'):
-            fml_id = int(re.search(r'(\d+)\.html', article.get('href')).group(1))
-            fml_cache.append((fml_id, text))
+        div = e.find('div', {'id': re.compile('card')})
+        if not div:
+            continue
+
+        fml_id = int(div['id'].split('-')[-1])
+        text = ''.join(e.find('p').find_all(text=True))
+        fml_cache.append((fml_id, text))
 
 
 @asyncio.coroutine

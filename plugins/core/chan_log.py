@@ -25,8 +25,9 @@ def on_hook_end(bot, error, launched_hook, launched_event, admin_log):
             lines = traceback.format_exception(*error)
             last_line = lines[-1]
             messages.append(last_line.strip())
-        except Exception as e:
-            messages.append("Error occurred while formatting error {}: {}".format(type(e), e))
+        except Exception:
+            msg = traceback.format_exc()[-1]
+            messages.append("Error occurred while formatting error {}".format(msg))
         else:
             if paste:
                 try:

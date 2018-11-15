@@ -13,10 +13,16 @@ from cloudbot.util.filesize import size as format_bytes
 import cloudbot
 
 
-@hook.command("about", "version", autohelp=False)
-def about():
+def _get_repo_link(bot):
+    return bot.config.get(
+        'repo_link', 'https://github.com/valesi/CloudBot/'
+    )
+
+
+@hook.command("about", "version", "source", autohelp=False)
+def about(bot):
     """- Gives name, version, license, and source code of CloudBot."""
-    return "CloudBot v{} (unfinity) [div] https://github.com/valesi/CloudBot/ [div] GPLv3".format(cloudbot.__version__)
+    return "CloudBot v{} (unfinity) [div] {} [div] GPLv3".format(cloudbot.__version__, _get_repo_link(bot))
 
 
 @hook.command(autohelp=False)
@@ -62,11 +68,3 @@ def system(reply, message):
                 cpu_usage,
                 memory_usage)
         )
-
-
-@hook.command("source", "sauce", autohelp=False)
-def sauce():
-    """- Returns a link to the source"""
-    return "Check out my source code! I am a fork of cloudbot: " \
-           "https://github.com/edwardslabs/CloudBot/ and my source is here: " \
-           "https://github.com/valesi/CloudBot"

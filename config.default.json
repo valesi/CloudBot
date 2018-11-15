@@ -131,6 +131,7 @@
         "config_reloading": true,
         "plugin_reloading": false
     },
+    "repo_link": "https://github.com/valesi/CloudBot/",
     "logging": {
         "console_debug": false,
         "file_debug": false,
@@ -138,6 +139,7 @@
         "show_motd": true,
         "show_server_info": true,
         "raw_file_log": false,
-        "file_log": true
+        "file_log": true,
+        "console_log_info": true
     }
 }

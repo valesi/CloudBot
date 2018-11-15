@@ -74,7 +74,7 @@ def horoscope(text, db, bot, nick, notice, notice_doc, reply, message):
         "sign": signs[sign]
     }
 
-    url = "http://www.horoscope.com/us/horoscopes/general/horoscope-general-daily-today.aspx"
+    url = "https://www.horoscope.com/us/horoscopes/general/horoscope-general-daily-today.aspx"
 
     try:
         request = requests.get(url, params=params, headers=headers)
@@ -85,7 +85,7 @@ def horoscope(text, db, bot, nick, notice, notice_doc, reply, message):
 
     soup = BeautifulSoup(request.text)
 
-    horoscope_text = soup.find("div", class_="horoscope-content").find("p").text
+    horoscope_text = soup.find("main", class_="main-horoscope").find("p").text
     result = "[h1]{}[/h1] {}".format(sign, horoscope_text)
 
     if text and not dontsave:

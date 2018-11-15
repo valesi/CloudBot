@@ -64,7 +64,7 @@ def isup(text):
 
     soup = BeautifulSoup(response.text, 'lxml')
 
-    content = soup.find('div').text.strip()
+    content = soup.find('div', id="domain-main-content").text.strip()
 
     if "not just you" in content:
         return "It's not just you. {} looks $(red)down$(c)".format(url)

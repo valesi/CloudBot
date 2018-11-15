@@ -96,7 +96,7 @@ class Shortener:
             r.raise_for_status()
         except RequestException as e:
             r = e.response
-            raise ServiceError(r.status_code, r)
+            raise ServiceError(r.reason, r)
 
         if 'location' in r.headers:
             return r.headers['location']
@@ -141,7 +141,7 @@ class Isgd(Shortener):
             r.raise_for_status()
         except RequestException as e:
             r = e.response
-            raise ServiceError(r.status_code, r)
+            raise ServiceError(r.reason, r)
 
         j = r.json()
 
@@ -157,7 +157,7 @@ class Isgd(Shortener):
             r.raise_for_status()
         except RequestException as e:
             r = e.response
-            raise ServiceError(r.status_code, r)
+            raise ServiceError(r.reason, r)
 
         j = r.json()
 
@@ -178,7 +178,7 @@ class Googl(Shortener):
             r.raise_for_status()
         except RequestException as e:
             r = e.response
-            raise ServiceError(r.status_code, r)
+            raise ServiceError(r.reason, r)
 
         j = r.json()
 
@@ -194,7 +194,7 @@ class Googl(Shortener):
             r.raise_for_status()
         except RequestException as e:
             r = e.response
-            raise ServiceError(r.status_code, r)
+            raise ServiceError(r.reason, r)
 
         j = r.json()
 
@@ -213,7 +213,7 @@ class Gitio(Shortener):
             r.raise_for_status()
         except RequestException as e:
             r = e.response
-            raise ServiceError(r.status_code, r)
+            raise ServiceError(r.reason, r)
 
         if r.status_code == requests.codes.created:
             s = r.headers['location']
@@ -233,7 +233,7 @@ class Hastebin(Pastebin):
             r.raise_for_status()
         except RequestException as e:
             r = e.response
-            raise ServiceError(r.status_code, r)
+            raise ServiceError(r.reason, r)
         else:
             j = r.json()
 
@@ -256,6 +256,6 @@ class SnoonetPaste(Pastebin):
             r.raise_for_status()
         except RequestException as e:
             r = e.response
-            raise ServiceError(r.status_code, r)
+            raise ServiceError(r.reason, r)
         else:
             return '{}'.format(r.url)
