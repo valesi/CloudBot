@@ -66,7 +66,9 @@ def delete_status(db, conn, chan):
 
 
 def store_event(event):
+    """Stores the event and marks it as forced to pass through the sieve"""
     global events
+    event.force = True
     if (event.conn.name, event.chan) in events:
         events[(event.conn.name, event.chan)].appendleft(event)
     else:
@@ -102,14 +104,40 @@ def check_solicit_index(conn_name, chan, text):
 
 
 @hook.command("get", autohelp=False)
+@asyncio.coroutine
 def solicit(bot, conn, text, chan, nick, user, host, mask):
     """[index] - Gets suppressed event at count [index] from most recent 0, defaulting to last"""
+    toRun = []
+    ret, value = check_solicit_index(conn.name, chan, text)
+
     if text:
-        ret, value = check_solicit_index(conn.name, chan, text)
         if ret is None:
-            # Run a new event directly with the force flag
-            e = event.Event(bot=bot, conn=conn, content=text, event_type=event.EventType.message, channel=chan, nick=nick, user=user, host=host, mask=mask, force=True)
-            asyncio.async(bot.process(e), loop=bot.loop)
+            # text isn't a number, so find regex hooks that match
+            # TODO refactor. this is stolen from bot.process
+            regex_matched = False
+            for regex, regex_hook in bot.plugin_manager.regex_hooks:
+                if regex_hook.only_no_match and regex_matched:
+                    continue
+                regex_match = regex.search(text)
+                if regex_match:
+                    regex_matched = True
+                    # Create a new event with the force flag
+                    e = event.Event(bot=bot, conn=conn, content=text, event_type=event.EventType.message, channel=chan,
+                                    nick=nick, user=user, host=host, mask=mask, force=True)
+                    toRun.append(event.RegexEvent(hook=regex_hook, match=regex_match, base_event=e))
+                    if (regex_hook.action is hook.Action.HALTALL) or (regex_hook.action is hook.Action.HALTTYPE):
+                        break
+        elif ret is False:
+            # invalid number: print max bound
+            if value:
+                return value
+    
+    # We want event at given index
+    if ret:
+        toRun.append(get_event(conn.name, chan, value))
+
+    for e in toRun:
+        yield from bot.plugin_manager.launch(e.hook, e)
 
 
 @hook.sieve()
@@ -119,12 +147,13 @@ def sieve_regex(bot, event, _hook):
     if _hook.type == "regex" and event.chan.startswith("#"):
         if _hook.plugin.title not in plugin_whitelist:
             if event.force:
-                bot.logger.info("Force run {}: {}".format(_hook.function_name, event.match.group()))
+                bot.logger.debug("Force run {}: {}".format(_hook.function_name, event.match.group()))
                 return event
+
             allow = True
             status = status_cache.get((event.conn.name, event.chan))
             if status != "ENABLED" and (status == "DISABLED" or not default_enabled):
-                # Allow sed/correction with command prefix
+                # Allow sed/correction with command prefix, otherwise ignore it
                 if _hook.plugin.title == "correction":
                     return event if event.match.group()[0] in prefix else None
                 allow = False
@@ -133,26 +162,11 @@ def sieve_regex(bot, event, _hook):
                 allow = False
 
             if allow:
-                bot.logger.info("[{}] Allowing {} to {}".format(event.conn.name, _hook.function_name, event.chan))
+                bot.logger.debug("[{}] Allowing {} to {}".format(event.conn.name, _hook.function_name, event.chan))
             else:
-                bot.logger.info("[{}] Denying {} from {}. Storing in queue.".format(event.conn.name, _hook.function_name, event.chan))
+                bot.logger.debug("[{}] Denying {} from {}. Storing in queue.".format(event.conn.name, _hook.function_name, event.chan))
                 store_event(event)
                 return
-    elif _hook.type == "command" and _hook.function_name == "solicit":
-        # Don't allow recursive .get .get .get ...
-        if event.text and event.text[0] in prefix and event.text[1:].startswith(event.triggered_command):
-            return
-        # TODO get last regex of user if text is user?
-        ret, value = check_solicit_index(event.conn.name, event.chan, event.text)
-        # number: valid index
-        if ret:
-            return get_event(event.conn.name, event.chan, value)
-        # number: invalid index
-        elif ret is False:
-            if value:
-                event.message(value)
-            return
-        # ret is None: NaN: direct regex command (force flag) passes through solicit()
 
     return event
 
