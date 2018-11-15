@@ -347,7 +347,7 @@ class CloudBot:
                     for alias, hook in self.plugin_manager.commands.items():
                         if alias.startswith(command):
                             # only list commands the user has permissions for
-                            if not event.check_permissions(hook.permissions, notice=False):
+                            if hook.permissions and not (yield from event.check_permissions(*hook.permissions, notice=False)):
                                 continue
                             # plugin + function name groups aliases
                             key = hook.plugin.title + hook.function_name
@@ -355,7 +355,7 @@ class CloudBot:
                                 # First item is always the hook
                                 potential_matches[key] = [hook]
                             potential_matches[key].append(alias)
-##
+
                     if potential_matches:
                         matched_command = True
                         if len(potential_matches) == 1:
@@ -366,6 +366,7 @@ class CloudBot:
                             sorted_cmds = sorted(
                                 ["/".join((aliases[1:])) for aliases in potential_matches.values()])
                             event.reply("Possible matches: " + ", ".join(sorted_cmds))
+
         if event.type in (EventType.message, EventType.action):
             # Regex hooks
             regex_matched = False
