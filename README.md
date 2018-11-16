@@ -6,7 +6,7 @@ CloudBot is a simple, fast, expandable, and open-source Python IRC Bot!
 
 There are currently two branches in this repository:
  - **unfinity** *(stable)*: master branch; contains everything in the **gonzobot** branch plus extra customizations like theming and running suppressed regex events.
- - **gonzobot** *(stable)*: mirrors **[/edwardslabs/CloudBot/gonzobot](https://github.com/edwardslabs/CloudBot)**
+ - **gonzobot** *(stable)*: mirrors **[/snoonetIRC/CloudBot/gonzobot](https://github.com/snoonetIRC/CloudBot)**
 
 ## Installing CloudBot
 
