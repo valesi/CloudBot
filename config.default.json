@@ -106,6 +106,7 @@
         "yandex_translate": ""
     },
     "database": "sqlite:///cloudbot.db",
+    "force_load_api_key_plugins": false,
     "paste_exceptions": false,
     "plugin_loading": {
         "blacklist": [

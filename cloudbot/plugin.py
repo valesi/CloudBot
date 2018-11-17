@@ -60,6 +60,23 @@ def find_tables(code):
     return tables
 
 
+def find_missing_api_keys(bot, hook):
+    """
+    Checks the hook for any needed APIs before registering.
+
+    :type hook: Hook
+    :rtype: list[str]
+    """
+    missing_keys = []
+    hook_keys = hook.api_keys
+    if hook_keys:
+        bot_keys = bot.config.get('api_keys', {})
+        for hkey in hook_keys:
+            if hkey not in bot_keys or not bot_keys.get(hkey):
+                missing_keys.append(hkey)
+    return missing_keys
+
+
 class PluginManager:
     """
     PluginManager is the core of CloudBot plugin loading.
@@ -189,9 +206,21 @@ class PluginManager:
 
         # run on_start hooks
         for on_start_hook in plugin.hooks["on_start"]:
-            success = yield from self.launch(on_start_hook, Event(bot=self.bot, hook=on_start_hook))
+            # entire plugin needs API keys
+            missing_keys = None
+            if not self.bot.config.get("force_load_api_key_plugins", False):
+                missing_keys = find_missing_api_keys(self.bot, on_start_hook)
+
+            if missing_keys:
+                success = False
+            else:
+                success = yield from self.launch(on_start_hook, Event(bot=self.bot, hook=on_start_hook))
+
             if not success:
-                logger.warning("Not registering hooks from plugin {}: on_start hook errored".format(plugin.title))
+                start = 'Not registering hooks from plugin {}: '.format(plugin.title)
+                logger.warning(start + ("missing API key(s): {}".format(missing_keys)
+                                        if missing_keys
+                                        else "on_start hook errored"))
 
                 # unregister databases
                 plugin.unregister_tables(self.bot)
@@ -703,6 +732,7 @@ class Hook:
         self.single_thread = func_hook.kwargs.pop("singlethread", False)
         self.action = func_hook.kwargs.pop("action", Action.CONTINUE)
         self.priority = func_hook.kwargs.pop("priority", Priority.NORMAL)
+        self.api_keys = func_hook.kwargs.pop("api_keys", [])
 
         clients = func_hook.kwargs.pop("clients", [])
 
