@@ -117,7 +117,7 @@ def _format_search(text, _type, reply):
     return _format_response(data, _type, show_url=True, show_uri=True)
 
 
-@hook.onload
+@hook.on_start(api_keys=['spotify_client_id', 'spotify_client_secret'])
 def create_api(bot):
     keys = bot.config['api_keys']
     client_id = keys['spotify_client_id']

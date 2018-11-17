@@ -6,7 +6,7 @@ from cloudbot import hook
 api_url = "http://api.brewerydb.com/v2/search?format=json"
 
 
-@hook.on_start()
+@hook.on_start(api_keys=["brewerydb"])
 def load_key(bot):
     global api_key
     api_key = bot.config.get("api_keys", {}).get("brewerydb", None)

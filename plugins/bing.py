@@ -29,11 +29,15 @@ def bingify(s):
     return "'{}'".format(s)
 
 
+@hook.on_start(api_keys=["bing_azure"])
+def load_api_key(bot):
+    global api_key
+    api_key = bot.config.get("api_keys", {}).get("bing_azure")
+
+
 @hook.command("bing", "b")
 def bing(text, bot, reply):
     """<query> - returns the first bing search result for <query>"""
-    api_key = bot.config.get("api_keys", {}).get("bing_azure")
-
     # handle NSFW
     show_nsfw = text.endswith(" nsfw")
     # remove "nsfw" from the input string after checking for it
@@ -82,8 +86,6 @@ def bing(text, bot, reply):
 @hook.command("bingimage", "bis")
 def bingimage(text, bot, reply):
     """<query> - returns the first bing image search result for <query>"""
-    api_key = bot.config.get("api_keys", {}).get("bing_azure")
-
     # handle NSFW
     show_nsfw = text.endswith(" nsfw")
 

@@ -5,6 +5,13 @@ from cloudbot import hook
 max_length = 100
 
 
+@hook.on_start(api_keys=["google_dev_key"])
+def load_key(bot):
+    """ Loads the API key for Google APIs """
+    global api_key
+    api_key = bot.config.get("api_keys", {}).get("google_dev_key", None)
+
+
 def goog_trans(api_key, text, source, target):
     url = 'https://www.googleapis.com/language/translate/v2'
 
@@ -52,8 +59,6 @@ def match_language(fragment):
 def translate(text, bot):
     """[source language [target language]] <sentence> - translates <sentence> from source language (default autodetect)
      to target language (default English) using Google Translate"""
-
-    api_key = bot.config.get("api_keys", {}).get("google_dev_key", None)
     if not api_key:
         return "This command requires a Google Developers Console API key."
 

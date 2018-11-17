@@ -20,7 +20,7 @@ from cloudbot import hook
 API_URL = "http://octopart.com/api/v3/parts/search"
 
 
-@hook.on_start()
+@hook.on_start(api_keys=["octopart"])
 def load_key(bot):
     global api_key
     api_key = bot.config.get("api_keys", {}).get("octopart", None)

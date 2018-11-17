@@ -56,7 +56,7 @@ class AVApi:
 api = None
 
 
-@hook.onload
+@hook.on_start(api_keys=["alphavantage"])
 def create_api(bot):
     """
     :type bot: cloudbot.bot.CloudBot

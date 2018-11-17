@@ -44,7 +44,7 @@ def get_items(text):
     return items, reddit_search
 
 
-@hook.on_start()
+@hook.on_start(api_keys=["imgur_client_id", "imgur_client_secret"])
 def load_api(bot):
     global imgur_api
 

@@ -23,7 +23,7 @@ def sanitize(text):
     return urllib.parse.quote(text.translate({ord('\\'): None, ord('/'): None}))
 
 
-@hook.on_start()
+@hook.on_start(api_keys=["wordnik"])
 def load_key(bot):
     global api_key
     api_key = bot.config.get("api_keys", {}).get("wordnik", None)

@@ -145,7 +145,7 @@ def format_group(group, show_url=True):
 
 
 # CLOUDBOT HOOKS
-@hook.on_start()
+@hook.on_start(api_keys=["soundcloud"])
 def load_key(bot):
     global api_key
     api_key = bot.config.get("api_keys", {}).get("soundcloud", None)

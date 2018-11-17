@@ -3,7 +3,7 @@ from cleverwrap import CleverWrap
 from cloudbot import hook
 
 
-@hook.on_start()
+@hook.on_start(api_keys=["cleverbot"])
 def get_key(bot):
     global api_key, cb
     api_key = bot.config.get("api_keys", {}).get("cleverbot", None)

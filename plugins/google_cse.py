@@ -4,6 +4,8 @@ google.py
 Originally for RoboCop 2, a replacement after Google's deprecation of Google Web Search API
 Module requires a Google Custom Search API key and a Custom Search Engine ID in order to function.
 
+Create or edit CSE service at https://cse.google.com/cse/
+
 Created By:
     - Foxlet <http://furcode.tk/>
 
@@ -19,7 +21,7 @@ from cloudbot.util import formatting, filesize
 API_CS = 'https://www.googleapis.com/customsearch/v1'
 
 
-@hook.on_start()
+@hook.on_start(api_keys=["google_dev_key", "google_cse_id"])
 def load_api(bot):
     global dev_key
     global cx

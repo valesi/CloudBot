@@ -13,7 +13,7 @@ STATUS_RE = re.compile(r"(?:(?:www\.twitter\.com|twitter\.com)/(?:[-_a-zA-Z0-9]+
 TCO_RE = re.compile(r"https?://t\.co/\w+", re.I)
 
 
-@hook.on_start()
+@hook.on_start(api_keys=["twitter_consumer_key", "twitter_consumer_secret", "twitter_access_token", "twitter_access_secret"])
 def load_api(bot):
     global tw_api
 
@@ -193,4 +193,3 @@ def twuser(text, reply):
     out.append(tf("Followers", user.followers_count))
 
     return "{}@{} ({}) [div] {}".format(verified, user.screen_name, user.name, " [div] ".join(out))
-

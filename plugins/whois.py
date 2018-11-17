@@ -12,7 +12,7 @@ from cloudbot import hook
 API_URL = "https://jsonwhoisapi.com/api/v1/whois"
 
 
-@hook.on_start()
+@hook.on_start(api_keys=["jsonwhoisapi_id", "jsonwhoisapi_key"])
 def load_key(bot):
     global account_id, api_key
     account_id = bot.config.get("api_keys", {}).get("jsonwhoisapi_id")

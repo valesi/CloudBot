@@ -20,7 +20,7 @@ playlist_parts = ["snippet", "contentDetails", "status"]
 err_no_api = "The YouTube API is off in the Google Developers Console."
 
 
-@hook.on_start()
+@hook.on_start(api_keys=["google_dev_key"])
 def load_key(bot):
     global dev_key
     dev_key = bot.config.get("api_keys", {}).get("google_dev_key", None)

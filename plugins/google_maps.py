@@ -28,7 +28,7 @@ def check_status(status):
         return None
 
 
-@hook.on_start
+@hook.on_start(api_keys=["google_dev_key"])
 def load_key(bot):
     """ Loads the API key for Google APIs """
     global dev_key

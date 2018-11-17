@@ -7,7 +7,7 @@ from cloudbot.util import web
 api_url = "https://translate.yandex.net/api/v1.5/tr.json/"
 
 
-@hook.on_start()
+@hook.on_start(api_keys=["yandex_translate"])
 def load_key(bot):
     global api_key, lang_dict, lang_dir
     api_key = bot.config.get("api_keys", {}).get("yandex_translate", None)

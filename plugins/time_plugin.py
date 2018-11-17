@@ -48,8 +48,6 @@ def load_key(bot):
 @hook.command("time")
 def time_command(text, reply):
     """<location> - Gets the current time in <location>."""
-    if not dev_key:
-        return "This command requires a Google Developers Console API key."
 
     if text.lower() == "unix":
         return str(time.time())
@@ -80,6 +78,9 @@ def time_command(text, reply):
             formatted_time = datetime.datetime.strftime(tztime, time_fmt)
             return "{} [div] {}".format(formatted_time, timezone)
            
+    if not dev_key:
+        return "Location-based time requires a Google Developers Console API key."
+
     # Use the Geocoding API to get co-ordinates from the input
     params = {"address": text, "key": dev_key}
     if bias:

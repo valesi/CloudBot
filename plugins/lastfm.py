@@ -61,11 +61,14 @@ def filter_tags(tags, artist, limit=4):
 last_cache = {}
 
 
-@hook.on_start()
-def load_cache(db):
+@hook.on_start(api_keys=["lastfm"])
+def load_cache(bot, db):
     """
     :type db: sqlalchemy.orm.Session
     """
+    global api_key
+    api_key = bot.config.get("api_keys", {}).get("lastfm")
+
     last_cache.clear()
     for row in db.execute(table.select()):
         nick = row["nick"]
@@ -154,7 +157,6 @@ def getartistinfo(api_key, artist, user=''):
 
 
 def _topartists(bot, text, nick, period=None, limit=10):
-    api_key = bot.config.get("api_keys", {}).get("lastfm")
     if not api_key:
         return "error: no api key set"
 
@@ -187,7 +189,6 @@ def _topartists(bot, text, nick, period=None, limit=10):
 @hook.command("lastfm", "last", "np", "l", autohelp=False)
 def lastfm(event, db, text, nick, bot):
     """[user] [dontsave] - displays the now playing (or last played) track of LastFM user [user]"""
-    api_key = bot.config.get("api_keys", {}).get("lastfm")
     if not api_key:
         return "error: no api key set"
 
@@ -276,7 +277,6 @@ def lastfm(event, db, text, nick, bot):
 @hook.command("plays")
 def getuserartistplaycount(event, bot, text, nick):
     """[artist] - displays the current user's playcount for [artist]. You must have your username saved."""
-    api_key = bot.config.get("api_keys", {}).get("lastfm")
     if not api_key:
         return "error: no api key set"
 
@@ -303,7 +303,6 @@ def getuserartistplaycount(event, bot, text, nick):
 @hook.command("band", "la")
 def displaybandinfo(bot, text):
     """[artist] - displays information about [artist]."""
-    api_key = bot.config.get("api_keys", {}).get("lastfm")
     if not api_key:
         return "error: no api key set"
 
@@ -326,7 +325,6 @@ def displaybandinfo(bot, text):
 @hook.command("lastfmcompare", "compare", "lc")
 def lastfmcompare(bot, text, nick):
     """<user1> [user2] - displays the now playing (or last played) track of LastFM user [user]"""
-    api_key = bot.config.get("api_keys", {}).get("lastfm")
     if not api_key:
         return "error: no api key set"
 
@@ -390,7 +388,6 @@ def lastfmcompare(bot, text, nick):
 @hook.command("ltop", "ltt", autohelp=False)
 def toptrack(bot, text, nick):
     """[username] - Grabs a list of the top tracks for a last.fm username"""
-    api_key = bot.config.get("api_keys", {}).get("lastfm")
     if not api_key:
         return "error: no api key set"
 

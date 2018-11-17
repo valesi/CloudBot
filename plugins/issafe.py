@@ -20,7 +20,7 @@ from cloudbot import hook
 API_SB = "https://sb-ssl.google.com/safebrowsing/api/lookup"
 
 
-@hook.on_start()
+@hook.on_start(api_keys=["google_dev_key"])
 def load_api(bot):
     global dev_key
 

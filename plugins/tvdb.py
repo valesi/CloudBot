@@ -13,7 +13,7 @@ API_URL = "https://thetvdb.com/api/"
 SITE_URL = "https://thetvdb.com/"
 
 
-@hook.on_start()
+@hook.on_start(api_keys=["tvdb"])
 def on_start(bot):
     global api_key
     api_key = bot.config.get("api_keys", {}).get("tvdb", None)
@@ -162,4 +162,3 @@ def tvdb(text):
     #    out.append(get_site_url(data["series_id"]))
 
     return " [div] ".join(out)
-

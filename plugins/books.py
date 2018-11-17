@@ -8,7 +8,7 @@ base_url = 'https://www.googleapis.com/books/v1/'
 book_search_api = base_url + 'volumes?'
 
 
-@hook.on_start()
+@hook.on_start(api_keys=["google_dev_key"])
 def load_key(bot):
     global dev_key
     dev_key = bot.config.get("api_keys", {}).get("google_dev_key", None)

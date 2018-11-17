@@ -7,7 +7,7 @@ from cloudbot import hook
 api_url = 'http://api.giphy.com/v1/gifs'
 
 
-@hook.on_start()
+@hook.on_start(api_keys=["giphy"])
 def load_api(bot):
     """Loads the API key. Check here for the public api key: https://github.com/Giphy/GiphyAPI"""
     global api_key

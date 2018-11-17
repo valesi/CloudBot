@@ -56,7 +56,7 @@ def add_location(nick, location, db):
         load_cache(db)
 
 
-@hook.on_start
+@hook.on_start(api_keys=["wunderground"])
 def on_start(bot, db):
     """ Loads API keys """
     global wunder_key
@@ -141,4 +141,3 @@ def weather(text, reply, db, nick, notice_doc):
           "High {today_high_c}°C ({today_high_f}°F), Low {today_low_c}°C ({today_low_f}°F) [div] "
           "[h1]Tomorrow:[/h1] {tomorrow_conditions}, High {tomorrow_high_c}°C ({tomorrow_high_f}°F), "
           "Low {tomorrow_low_c}°C ({tomorrow_low_f}°F)".format(**weather_data))
-

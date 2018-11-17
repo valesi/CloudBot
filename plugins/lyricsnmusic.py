@@ -8,10 +8,15 @@ from cloudbot.util import web
 api_url = "http://api.lyricsnmusic.com/songs"
 
 
+@hook.on_start(api_keys=["lyricsnmusic"])
+def load_key(bot):
+    global api_key
+    api_key = bot.config.get("api_keys", {}).get("lyricsnmusic")
+
+
 @hook.command("lyrics")
 def lyricsnmusic(text, bot, reply):
     """<artist and/or song> - will fetch the first 150 characters of a song and a link to the full lyrics."""
-    api_key = bot.config.get("api_keys", {}).get("lyricsnmusic")
     params = {"api_key": api_key, "q": text}
     r = requests.get(api_url, params=params)
     try:

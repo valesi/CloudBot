@@ -18,7 +18,7 @@ query_url = 'https://www.wolframalpha.com/input/?i={}'
 show_pods = {'Input': True, 'Result': True, 'UnitConversion': True, 'AdditionalConversion': True}
 
 
-@hook.on_start()
+@hook.on_start(api_keys=["wolframalpha"])
 def on_start(bot):
     global api_key
     api_key = bot.config.get("api_keys", {}).get("wolframalpha", None)
@@ -134,4 +134,3 @@ def wolframalpha(text, message):
     # Print remaining info
     for key in pod_texts:
         message(pod_texts[key])
-
