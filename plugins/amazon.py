@@ -32,7 +32,7 @@ def amazon_short_url(match, reply):
         if match:
             return amazon_url(match, reply)
         else:
-            return url + " didn't redirect to an Amazon product"
+            return "{} didn't redirect to an Amazon product (redirected to {})".format(match.group(0), loc)
     except Exception as ex:
         reply('Failed to get redirect: {}'.format(ex))
         raise
@@ -41,17 +41,15 @@ def amazon_short_url(match, reply):
 @hook.command("amazon", "az", "amzn")
 def amazon(text, reply, _parsed=False):
     """<query> -- Searches Amazon for query"""
-    headers = {
-        'User-Agent': 'Mozilla/5.0 CloudBot/1',
-        'Referer': 'https://www.amazon.com/'
-    }
+    # if input is from a link parser, we want its TLD
+    tld = _parsed if _parsed else DEFAULT_TLD
+
     params = {
         'url': 'search-alias',
-        'field-keywords': text.strip()
+        'field-keywords': text
     }
 
-    # if input is from a link parser, we want its TLD
-    request = requests.get(SEARCH_URL.format(_parsed if _parsed else DEFAULT_TLD), params=params, headers=headers)
+    request = requests.get(SEARCH_URL.format(tld), params=params)
 
     try:
         request.raise_for_status()
