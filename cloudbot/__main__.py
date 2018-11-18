@@ -35,7 +35,8 @@ def main():
     # whether we are killed while restarting
     stopped_while_restarting = False
 
-    # store the original SIGINT handler
+    # store the original SIG handlers
+    original_sigterm = signal.getsignal(signal.SIGTERM)
     original_sigint = signal.getsignal(signal.SIGINT)
 
     # define closure for signal handling
@@ -48,13 +49,17 @@ def main():
             # we are currently in the process of restarting
             stopped_while_restarting = True
         else:
-            async_util.run_coroutine_threadsafe(_bot.stop("Killed (Received SIGINT {})".format(signum)), _bot.loop)
+            async_util.run_coroutine_threadsafe(_bot.stop("Killed (Received signal {})".format(signum)), _bot.loop)
 
         logger.warning("Bot received Signal Interrupt ({})".format(signum))
 
         # restore the original handler so if they do it again it triggers
-        signal.signal(signal.SIGINT, original_sigint)
+        if signum == signal.SIGTERM:
+            signal.signal(signal.SIGTERM, original_sigterm)
+        elif signum == signal.SIGINT:
+            signal.signal(signal.SIGINT, original_sigint)
 
+    signal.signal(signal.SIGTERM, exit_gracefully)
     signal.signal(signal.SIGINT, exit_gracefully)
 
     # start the bot master
