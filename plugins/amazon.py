@@ -40,16 +40,25 @@ def amazon_short_url(match, reply):
 
 @hook.command("amazon", "az", "amzn")
 def amazon(text, reply, _parsed=False):
-    """<query> -- Searches Amazon for query"""
-    # if input is from a link parser, we want its TLD
-    tld = _parsed if _parsed else DEFAULT_TLD
+    """[-TLD] <query> -- Searches Amazon for query, from the optionally given TLD"""
+    split = text.split()
+    if len(split) > 1 and split[0].startswith('-'):
+        tld = split.pop(0)[1:]
+        text = " ".join(split)
+    else:
+        # if input is from a link parser, we want its TLD
+        tld = _parsed if _parsed else DEFAULT_TLD
+
+    headers = {
+        'Referer': 'https://www.amazon.com/'
+    }
 
     params = {
         'url': 'search-alias',
         'field-keywords': text
     }
 
-    request = requests.get(SEARCH_URL.format(tld), params=params)
+    request = requests.get(SEARCH_URL.format(tld), params=params, headers=headers)
 
     try:
         request.raise_for_status()
