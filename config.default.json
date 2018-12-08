@@ -79,6 +79,7 @@
         }
     ],
     "api_keys": {
+        "alphavantage": "",
         "bing_azure": "",
         "brewerydb": "",
         "cleverbot": "",
