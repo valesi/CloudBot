@@ -1,17 +1,12 @@
 import re
-from urllib.parse import unquote
+from urllib.parse import parse_qs, urlsplit
 
 from cloudbot import hook
 
-spamurl = re.compile(r'.*(((www\.)?google\.com/url\?)[^ ]+)', re.I)
+
+URL_RE = re.compile(r'((www\.)?google\.(\w+(\.\w+)?)/url\?[^ ]+)', re.I)
 
 
-@hook.regex(spamurl)
+@hook.regex(URL_RE)
 def google_url(match):
-    matches = match.group(1)
-    url = matches
-
-    url = "http://{}".format(url)
-    out = "".join([(unquote(a[4:]) if a[:4] == "url=" else "") for a in url.split("&")]) \
-        .replace(", ,", "").strip()
-    return out
+    return parse_qs(urlsplit(match.group())[3])['url']
