@@ -64,7 +64,7 @@ def herald(text, nick, chan, db, reply):
         load_cache(db)
 
 
-@hook.command(permissions=["botcontrol", "snoonetstaff"])
+@hook.command(permissions=["botcontrol"])
 def deleteherald(text, chan, db, reply):
     """<nickname> - Delete [nickname]'s herald."""
 

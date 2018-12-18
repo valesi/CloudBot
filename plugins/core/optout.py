@@ -180,7 +180,7 @@ def optout(text, event, chan, db, conn):
     if args[0].startswith("#") and len(args) > 1:
         chan = args.pop(0)
 
-    has_perm = yield from check_channel_permissions(event, chan, "op", "chanop", "snoonetstaff", "botcontrol")
+    has_perm = yield from check_channel_permissions(event, chan, "op", "chanop", "botcontrol")
 
     if not has_perm:
         event.notice("Sorry, you may not configure optout settings for that channel.")
@@ -213,7 +213,7 @@ def deloptout(text, event, chan, db, conn):
     if len(args) > 1:
         chan = args.pop(0)
 
-    has_perm = yield from check_channel_permissions(event, chan, "op", "chanop", "snoonetstaff", "botcontrol")
+    has_perm = yield from check_channel_permissions(event, chan, "op", "chanop", "botcontrol")
 
     if not has_perm:
         event.notice("Sorry, you may not configure optout settings for that channel.")
@@ -236,7 +236,7 @@ def check_global_perms(event):
     if text:
         chan = text.split()[0]
 
-    can_global = yield from event.check_permissions("snoonetstaff", "botcontrol")
+    can_global = yield from event.check_permissions("botcontrol")
     allowed = can_global or (yield from check_channel_permissions(event, chan, "op", "chanop"))
 
     if not allowed:

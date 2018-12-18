@@ -234,7 +234,7 @@ def restart(text, bot):
         yield from bot.restart()
 
 
-@hook.command(permissions=["botcontrol", "snoonetstaff"])
+@hook.command(permissions=["botcontrol"])
 @asyncio.coroutine
 def join(text, conn, nick, notice, admin_log):
     """<channel> - joins <channel>
@@ -249,7 +249,7 @@ def join(text, conn, nick, notice, admin_log):
         conn.join(target)
 
 
-@hook.command(permissions=["botcontrol", "snoonetstaff"], autohelp=False)
+@hook.command(permissions=["botcontrol"], autohelp=False)
 @asyncio.coroutine
 def part(text, conn, nick, chan, notice, admin_log):
     """[#channel] - parts [#channel], or the caller's channel if no channel is specified
@@ -315,7 +315,7 @@ def raw(text, conn, notice):
     conn.send(text)
 
 
-@hook.command(permissions=["botcontrol", "snoonetstaff"])
+@hook.command(permissions=["botcontrol"])
 @asyncio.coroutine
 def say(text, conn, chan, nick, admin_log):
     """[#channel] <message> - says <message> to [#channel], or to the caller's channel if no channel is specified
@@ -335,7 +335,7 @@ def say(text, conn, chan, nick, admin_log):
     conn.message(channel, text)
 
 
-@hook.command("message", "sayto", permissions=["botcontrol", "snoonetstaff"])
+@hook.command("message", "sayto", permissions=["botcontrol"])
 @asyncio.coroutine
 def message(text, conn, nick, admin_log):
     """<name> <message> - says <message> to <name>
@@ -349,7 +349,7 @@ def message(text, conn, nick, admin_log):
     conn.message(channel, text)
 
 
-@hook.command("me", "act", permissions=["botcontrol", "snoonetstaff"])
+@hook.command("me", "act", permissions=["botcontrol"])
 @asyncio.coroutine
 def me(text, conn, chan, nick, admin_log):
     """[#channel] <action> - acts out <action> in a [#channel], or in the current channel of none is specified

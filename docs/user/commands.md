@@ -90,7 +90,7 @@ unfinity Command list
 
 **chain**: &lt;cmd1&gt; &lt;args...&gt; | &lt;cmd2&gt; &lt;args...&gt; | ... - Runs commands in a chain, piping the output from previous commands to tne next
 
-**chainallow**: {add &lt;hook&gt; &lt;{allow|deny}&gt;|del &lt;hook&gt;} - Manage the allowed list fo comands for the chain command ( *Permission required:* botcontrol, snoonetstaff)
+**chainallow**: {add &lt;hook&gt; &lt;{allow|deny}&gt;|del &lt;hook&gt;} - Manage the allowed list fo comands for the chain command ( *Permission required:* botcontrol)
 
 **chainlist**: - Returns the list of commands allowed in 'chain'
 
@@ -144,7 +144,7 @@ unfinity Command list
 
 **define (dictionary):** &lt;word&gt; - Returns a dictionary definition from Wordnik for &lt;word&gt;.
 
-**deleteherald**: &lt;nickname&gt; - Delete &lt;nickname&gt;'s herald. ( *Permission required:* botcontrol, snoonetstaff)
+**deleteherald**: &lt;nickname&gt; - Delete &lt;nickname&gt;'s herald. ( *Permission required:* botcontrol)
 
 **deloptout**: &lt;chan&gt; &lt;pattern&gt; - Delete global optout hooks matching &lt;pattern&gt; in &lt;chan&gt;, or the current channel if not specified
 
@@ -290,7 +290,7 @@ unfinity Command list
 
 **high5 (highfive, hi5):** &lt;user&gt; - highfives &lt;user&gt;
 
-**hookstats**: {global|network &lt;name&gt;|channel &lt;network&gt; &lt;channel&gt;|hook &lt;hook&gt;} - Get hook usage statistics ( *Permission required:* snoonetstaff, botcontrol)
+**hookstats**: {global|network &lt;name&gt;|channel &lt;network&gt; &lt;channel&gt;|hook &lt;hook&gt;} - Get hook usage statistics ( *Permission required:* botcontrol)
 
 **hookup**: - matches two users from the channel in a sultry scene.
 
@@ -324,7 +324,7 @@ unfinity Command list
 
 **isup**: &lt;url&gt; - uses isup.me to check if &lt;url&gt; is online or offline
 
-**join**: &lt;channel&gt; - joins &lt;channel&gt; ( *Permission required:* botcontrol, snoonetstaff)
+**join**: &lt;channel&gt; - joins &lt;channel&gt; ( *Permission required:* botcontrol)
 
 **karma (ruser):** &lt;reddituser&gt; - will return the information about the specified reddit username
 
@@ -430,11 +430,11 @@ unfinity Command list
 
 **mcwiki**: &lt;phrase&gt; - gets the first paragraph of the Minecraft Wiki article on &lt;phrase&gt;
 
-**me (act):** &lt;#channel&gt; &lt;action&gt; - acts out &lt;action&gt; in a &lt;#channel&gt;, or in the current channel of none is specified ( *Permission required:* botcontrol, snoonetstaff)
+**me (act):** &lt;#channel&gt; &lt;action&gt; - acts out &lt;action&gt; in a &lt;#channel&gt;, or in the current channel of none is specified ( *Permission required:* botcontrol)
 
 **meh**: - List the current meh.com deal.
 
-**message (sayto):** &lt;name&gt; &lt;message&gt; - says &lt;message&gt; to &lt;name&gt; ( *Permission required:* botcontrol, snoonetstaff)
+**message (sayto):** &lt;name&gt; &lt;message&gt; - says &lt;message&gt; to &lt;name&gt; ( *Permission required:* botcontrol)
 
 **metacritic (mc):** &lt;all|movie|tv|album|x360|ps3|pc|gba|ds|3ds|wii|vita|wiiu|xone|ps4&gt; &lt;title&gt; - gets rating for &lt;title&gt; from
 
@@ -512,7 +512,7 @@ unfinity Command list
 
 **pancake**: &lt;user&gt; - gives pancakes to &lt;user&gt;
 
-**part**: &lt;#channel&gt; - parts &lt;#channel&gt;, or the caller's channel if no channel is specified ( *Permission required:* botcontrol, snoonetstaff)
+**part**: &lt;#channel&gt; - parts &lt;#channel&gt;, or the caller's channel if no channel is specified ( *Permission required:* botcontrol)
 
 **password**: &lt;length &lt;types&gt;&gt; - generates a password of &lt;length&gt; (default 12). &lt;types&gt; can include 'alpha', 'no caps', 'numeric', 'symbols' or any combination: eg. 'numbers symbols' (default: alpha numeric no caps)
 
@@ -624,7 +624,7 @@ unfinity Command list
 
 **sandwich**: &lt;user&gt; - gives a sandwich to &lt;user&gt;
 
-**say**: &lt;#channel&gt; &lt;message&gt; - says &lt;message&gt; to &lt;#channel&gt;, or to the caller's channel if no channel is specified ( *Permission required:* botcontrol, snoonetstaff)
+**say**: &lt;#channel&gt; &lt;message&gt; - says &lt;message&gt; to &lt;#channel&gt;, or to the caller's channel if no channel is specified ( *Permission required:* botcontrol)
 
 **scone**: &lt;user&gt; - gives a scone to &lt;user&gt;
 

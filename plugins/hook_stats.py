@@ -91,7 +91,7 @@ stats_funcs = {
 }
 
 
-@hook.command(permissions=["snoonetstaff", "botcontrol"])
+@hook.command(permissions=["botcontrol"])
 def hookstats(text, bot, notice_doc):
     """{global|network <name>|channel <network> <channel>|hook <hook>} - Get hook usage statistics"""
     args = text.split()
