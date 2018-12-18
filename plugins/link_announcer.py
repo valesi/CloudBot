@@ -1,8 +1,7 @@
 import re
-from contextlib import closing
 
+from lxml.etree import HTMLPullParser
 import requests
-from bs4 import BeautifulSoup
 
 from cloudbot import hook
 from cloudbot.hook import Priority, Action
@@ -84,28 +83,57 @@ def title_re(match):
 def get_title(url):
     if not url:
         return
+
+    resp_out = None
+
     try:
-        with closing(requests.get(url, headers=HEADERS, stream=True, timeout=10)) as r:
-            r.raise_for_status()
-            if not r.encoding:
-                content = r.headers['content-type']
-                size = filesize.size(int(r.headers['content-length']), system=filesize.si)
-                return "[h1]Content Type:[/h1] {} [div] [h1]Size:[/h1] {}".format(content, size)
+        with requests.get(url, headers=HEADERS, stream=True) as r:
+            status = r.status_code
 
-            content = r.raw.read(MAX_RECV + 1, decode_content=True)
-            # Sites advertising ISO-8859-1 are often lying
-            if r.encoding == 'ISO-8859-1':
-                r.encoding = "utf-8"
-            encoding = r.encoding
+            if r.encoding is not None:
+                parser = HTMLPullParser(tag='title')
+                found = False
+                consumed = 0
+                for chunk in r.iter_content(512, decode_unicode=True):
+                    consumed += len(chunk)
+                    parser.feed(chunk)
+                    for _, elem in parser.read_events():
+                        parser.close()
+                        resp_out = elem.xpath('string()').strip() or 'Empty title'
+                        found = True
+                        break
+                    if found is True:
+                        break
+                    if consumed >= MAX_RECV:
+                        resp_out = 'No title in first {}'.format(filesize.size(MAX_RECV, system=filesize.SA))
+                        break
+                if resp_out is None:
+                    resp_out = 'No title'
+            else:
+                out = ['[h1]Type:[/h1] {}'.format(r.headers['content-type'])]
+                size_out = '[h1]Size:[/h1] '
+                size = r.headers.get('content-length')
+                if size is not None:
+                    size = int(size)
+                    size_out += filesize.size(size, system=filesize.SA, roundto=2)
+                    # Actual byte count is nice
+                    if size >= 1000:
+                        size_out += ' [h3]({})[/h3]'.format(size)
+                else:
+                    size_out += 'Unknown'
+                out.append(size_out)
+                lmod = r.headers.get('last-modified')
+                if lmod:
+                    out.append('[h1]Modified:[/h1] {}'.format(lmod))
+                resp_out = ' [div] '.join(out)
 
-        if len(content) > MAX_RECV:
-            return
-
-        html = BeautifulSoup(content, "lxml", from_encoding=encoding)
-
-        if html.title:
-            return " ".join(html.title.text.strip().splitlines())
-        else:
-            return "No title"
     except Exception as ex:
         return "Error: {}".format(ex)
+
+    if resp_out is None:
+        resp_out = 'No info'
+
+    if status >= 400:
+        resp_out = '$(red)({})$(c) [div] {}'.format(status, resp_out)
+
+    return resp_out
