@@ -6,8 +6,6 @@ import urllib.error
 import urllib.parse
 import urllib.request
 # noinspection PyUnresolvedReferences
-import warnings
-# noinspection PyUnresolvedReferences
 from urllib.parse import quote, quote_plus as _quote_plus
 
 from bs4 import BeautifulSoup
@@ -94,29 +92,13 @@ def open_request(url, query_params=None, user_agent=None, post_data=None, refere
         return opener.open(request)
 
 
-# noinspection PyShadowingBuiltins
-def open(url, query_params=None, user_agent=None, post_data=None,
-         referer=None, get_method=None, cookies=False, timeout=None, headers=None,
-         **kwargs):  # pylint: disable=locally-disabled, redefined-builtin
-    warnings.warn(
-        "http.open() is deprecated, use http.open_request() instead.",
-        DeprecationWarning
-    )
-
-    return open_request(
-        url, query_params=query_params, user_agent=user_agent, post_data=post_data, referer=referer,
-        get_method=get_method, cookies=cookies, timeout=timeout, headers=headers, **kwargs
-    )
-
-
 def prepare_url(url, queries):
     if queries:
         scheme, netloc, path, query, fragment = urllib.parse.urlsplit(url)
 
         query = dict(urllib.parse.parse_qsl(query))
         query.update(queries)
-        query = urllib.parse.urlencode(dict((to_utf8(key), to_utf8(value))
-                                            for key, value in query.items()))
+        query = urllib.parse.urlencode({to_utf8(key): to_utf8(value) for key, value in query.items()})
 
         url = urllib.parse.urlunsplit((scheme, netloc, path, query, fragment))
 
