@@ -97,15 +97,25 @@ si = (
     (1000 ** 0, 'B'),
 )
 
+si_alternative = (
+    (1000 ** 5, ' PB'),
+    (1000 ** 4, ' TB'),
+    (1000 ** 3, ' GB'),
+    (1000 ** 2, ' MB'),
+    (1000 ** 1, ' KB'),
+    (1000 ** 0, (' byte', ' bytes')),
+)
+
 # re.I style aliases
 T = traditional
 A = alternative
 V = verbose
 I = iec
 S = si
+SA = si_alternative
 
 
-def size(b, system=traditional):
+def size(b, system=traditional, roundto=0):
     """Human-readable file size.
 
     Using the traditional system, where a factor of 1024 is used::
@@ -161,7 +171,9 @@ def size(b, system=traditional):
     else:
         return
 
-    amount = int(b / factor)
+    amount = round(b / factor, roundto)
+    if roundto == 0:
+        amount = int(amount)
     if isinstance(suffix, tuple):
         singular, multiple = suffix
         if amount == 1:
