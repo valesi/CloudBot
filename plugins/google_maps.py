@@ -10,22 +10,16 @@ geocode_api = base_url + 'geocode/json'
 # <https://developers.google.com/maps/documentation/geocoding/#RegionCodes>
 bias = None
 
+dev_key = None
 
-def check_status(status):
-    """ A little helper function that checks an API error code and returns a nice message.
-        Returns None if no errors found """
-    if status == 'REQUEST_DENIED':
-        return 'The geocode API is off in the Google Developers Console.'
-    elif status == 'ZERO_RESULTS':
-        return 'No results found.'
-    elif status == 'OVER_QUERY_LIMIT':
-        return 'The geocode API quota has run out.'
-    elif status == 'UNKNOWN_ERROR':
-        return 'Unknown Error.'
-    elif status == 'INVALID_REQUEST':
-        return 'Invalid Request.'
-    elif status == 'OK':
-        return None
+API_STATUS_ERROR = {
+    'REQUEST_DENIED': 'The geocode API is off in the Google Developers Console.',
+    'ZERO_RESULTS': 'No results found.',
+    'OVER_QUERY_LIMIT': 'The geocode API quota has run out.',
+    'UNKNOWN_ERROR': 'Unknown Error.',
+    'INVALID_REQUEST': 'Invalid Request.',
+    'OK': None
+}
 
 
 @hook.on_start(api_keys=["google_dev_key"])
@@ -35,14 +29,13 @@ def load_key(bot):
     dev_key = bot.config.get("api_keys", {}).get("google_dev_key", None)
 
 
-@hook.command()
-def maps(text):
-    """<location> -- Finds <location> on Google Maps."""
+def query_geocoding_api(address):
+    '''Returns the `results` list from the Geocoding API, or a string of the API error status.
+    (https://developers.google.com/maps/documentation/geocoding/intro#GeocodingResponses)'''
     if not dev_key:
-        return "This command requires a Google Developers Console API key."
+        return 'google_maps.py plugin must be enabled for geocoding'
 
-    # Use the Geocoding API to get co-ordinates from the input
-    params = {"address": text, "key": dev_key}
+    params = {"address": address, "key": dev_key}
     if bias:
         params['region'] = bias
 
@@ -50,12 +43,25 @@ def maps(text):
     r.raise_for_status()
     json = r.json()
 
-    error = check_status(json['status'])
-    if error:
+    error = API_STATUS_ERROR.get(json['status'])
+    if error is not None:
         return error
 
-    result = json['results'][0]
+    return json['results']
 
+
+@hook.command()
+def maps(text):
+    """<location> -- Finds <location> on Google Maps."""
+    if not dev_key:
+        return "This command requires a Google Developers Console API key."
+
+    # Use the Geocoding API to get co-ordinates from the input
+    result = query_geocoding_api(text)
+    if isinstance(result, str):
+        return result
+
+    result = result[0]
     location_name = result['formatted_address']
     location = result['geometry']['location']
     formatted_location = "{lat},{lng},16z".format(**location)
