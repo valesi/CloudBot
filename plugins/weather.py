@@ -73,9 +73,9 @@ def get_location(nick):
         return location[0]
 
 
-@hook.command("weather", "we", autohelp=False)
+@hook.command("wunderground", "wu", autohelp=False)
 def weather(text, reply, db, nick, notice_doc):
-    """[location] - Gets weather data for [location], remembering the last used location if absent."""
+    """[location] - Gets weather data for [location], remembering the last used location if absent. (Powered by Weather Underground)"""
     if not wunder_key:
         return "This command requires a Weather Underground API key."
 
